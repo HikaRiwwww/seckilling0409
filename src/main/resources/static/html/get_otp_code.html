@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>获取短信验证码</title>
+    <script src="/js/jquery-3.5.0.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+
+<body class="login">
+    <div class="content">
+        <h3>请验证您的手机号码</h3>
+        <div>
+            <label class="control-label" for="telephone">手机号码</label>
+            <div>
+                <input class="form-control" type="text" name="telephone" id="telephone">
+            </div>
+            <div class="form-actions">
+                <button class="btn red-thunderbird" type="submit" id="getotp">获取短信验证码</button>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+<script>
+    $(function () {
+        $("#getotp").on("click", function () {
+            $.ajax({
+                type: "POST",
+                contentType: "application/x-www-form-urlencoded",
+                url: "/user/get_otp",
+                data: {
+                    "telephone": $("#telephone").val(),
+                },
+                success: function (data) {
+                    if (data.status === "success") {
+                        alert("验证码发送成功！");
+                        window.location.href="/html/register.html"
+                    } else {
+                        alert("验证码发送失败：" + data.data.errorMsg);
+                    }
+                },
+                error: function (data) {
+                    alert("验证码发送失败！" + data.responseText)
+                }
+            });
+        })
+    })
+</script>
+
+</html>
