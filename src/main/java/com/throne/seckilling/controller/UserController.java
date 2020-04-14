@@ -7,6 +7,7 @@ import com.throne.seckilling.response.CommonReturnType;
 import com.throne.seckilling.service.UserService;
 import com.throne.seckilling.service.model.UserModel;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,14 +123,12 @@ public class UserController extends BaseController {
         if (!com.alibaba.druid.util.StringUtils.equals(otpCode, otpCodeInSession)) {
             throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "验证码错误");
         }
-        String salt = "#*@!9($Hjksyf98w";
-
         // 构建UserModel
         UserModel userModel = new UserModel();
         // 二进制数据长度不为16会返回null
-        String encryptPassword = null;
+        String encryptPassword;
         try {
-            encryptPassword = encryptPasswordBySha256(password+salt);
+            encryptPassword = encryptPasswordBySha256(password);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             throw new BusinessException(EnumBusinessError.UNKNOWN_ERROR);
@@ -142,7 +141,6 @@ public class UserController extends BaseController {
         userModel.setRegisterMode("by phone");
         userModel.setThirdPartyId("");
 
-        System.out.println(userModel);
         // 调用service层处理用户注册
         userService.register(userModel);
         return CommonReturnType.create("success", "注册成功");
@@ -153,6 +151,35 @@ public class UserController extends BaseController {
         return "/html/get_otp_code.html";
     }
 
+    @RequestMapping(value = "/login",
+            method = {RequestMethod.POST},
+            consumes = {CONTENT_TYPE_FORMED}
+    )
+    @ResponseBody
+    public CommonReturnType userLogin(@RequestParam(name = "telephone") String telephone,
+                                      @RequestParam(name = "password") String password)
+            throws NoSuchAlgorithmException, BusinessException {
+        if (!phoneNumIsLegal(telephone)) {
+            throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "手机号格式不正确！");
+        }
+        if (StringUtils.isEmpty(password)) {
+            throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "密码不能为空！");
+        }
+        String encryptPassword = encryptPasswordBySha256(password);
+        UserModel userModel = userService.loginValidate(telephone, encryptPassword);
+        if (userModel == null) {
+            throw new BusinessException(EnumBusinessError.USER_LOGIN_FAILED);
+        }
+        HttpSession session = this.request.getSession();
+        session.setAttribute("IS_LOGIN", true);
+        session.setAttribute("LOGIN_USER", userModel);
+        return CommonReturnType.create("success", "登陆成功");
+    }
+
+    @RequestMapping("/login_page")
+    public String getLoginPage() {
+        return "/html/login.html";
+    }
 
     /**
      * 校验手机号格式是否合法 11位 纯数字
@@ -177,11 +204,14 @@ public class UserController extends BaseController {
 
     /**
      * 对加盐的密码用sha256算法加密
-     * @param saltedPassword  加盐的密码
-     * @return  加密后的密码
+     *
+     * @param password 用户密码
+     * @return 加密后的密码
      * @throws NoSuchAlgorithmException
      */
-    public String encryptPasswordBySha256(String saltedPassword) throws NoSuchAlgorithmException {
+    public String encryptPasswordBySha256(String password) throws NoSuchAlgorithmException {
+        String salt = "#*@!3($Hjk_syf98w";
+        String saltedPassword = salt + password;
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         byte[] bytes = messageDigest.digest(saltedPassword.getBytes());
         return new String(Hex.encodeHex(bytes));

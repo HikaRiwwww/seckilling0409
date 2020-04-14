@@ -8,6 +8,7 @@ import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
 import com.throne.seckilling.service.UserService;
 import com.throne.seckilling.service.model.UserModel;
+import org.apache.catalina.User;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,23 @@ public class UserServiceImpl implements UserService {
         userPasswordDOMapper.insertSelective(userPasswordDO);
     }
 
+    @Override
+    public UserModel loginValidate(String telephone, String encryptPassword) throws BusinessException {
+
+        UserDO userDO = userDOMapper.selectByTelephone(telephone);
+        UserModel userModel = convertUserDOToUserModel(userDO);
+        if(userModel==null){
+            throw new BusinessException(EnumBusinessError.USER_LOGIN_FAILED);
+        }
+        UserPasswordDO userPasswordDO = userPasswordDOMapper.selectByUserId(userModel.getId());
+        if((userPasswordDO==null) || !encryptPassword.equals(userPasswordDO.getEncryptPwd())){
+            throw new BusinessException(EnumBusinessError.USER_LOGIN_FAILED);
+        }
+
+        userModel = convertUserPasswordDOToUserModel(userPasswordDO, userModel);
+        return userModel;
+    }
+
     public UserDO convertModelToUserDO(UserModel userModel) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userModel, userDO);
@@ -81,4 +99,14 @@ public class UserServiceImpl implements UserService {
         return userPasswordDO;
     }
 
+    public UserModel convertUserDOToUserModel(UserDO userDO){
+        UserModel userModel = new UserModel();
+        BeanUtils.copyProperties(userDO, userModel);
+        return userModel;
+    }
+
+    public UserModel convertUserPasswordDOToUserModel(UserPasswordDO userPasswordDO, UserModel userModel){
+        userModel.setEncryptPwd(userPasswordDO.getEncryptPwd());
+        return userModel;
+    }
 }
