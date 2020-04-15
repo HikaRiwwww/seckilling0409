@@ -31,13 +31,6 @@ public class SeckillingApplication {
         }
     }
 
-
-//    @RequestMapping(path = "/user/get")
-//    public Integer home2(@RequestParam(name = "id") String id){
-//        return Integer.parseInt(id);
-//
-//    }
-
     public static void main(String[] args) {
         SpringApplication.run(SeckillingApplication.class, args);
     }

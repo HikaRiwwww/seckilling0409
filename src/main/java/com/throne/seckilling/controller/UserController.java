@@ -6,21 +6,21 @@ import com.throne.seckilling.error.EnumBusinessError;
 import com.throne.seckilling.response.CommonReturnType;
 import com.throne.seckilling.service.UserService;
 import com.throne.seckilling.service.model.UserModel;
+import com.throne.seckilling.validator.ValidationResult;
+import com.throne.seckilling.validator.ValidatorImpl;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.annotation.Resources;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Random;
 
 /**
@@ -42,6 +42,8 @@ public class UserController extends BaseController {
     // 由spring帮助注入request对象，该对象是单例，但是实现了ThreadLocal
     private HttpServletRequest request;
 
+    @Resource(name = "validator")
+    private ValidatorImpl validator;
     /**
      * 根据id调用service返回对应用户信息给前端
      *
@@ -73,7 +75,7 @@ public class UserController extends BaseController {
     @ResponseBody
     public CommonReturnType getOtp(@RequestParam(name = "telephone") String telephone) throws BusinessException {
         // 验证手机号的格式
-        if (!phoneNumIsLegal(telephone)) {
+        if (phoneNumIsIllegal(telephone)) {
             throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "手机号格式不正确！");
         }
         // 生成验证码
@@ -141,6 +143,12 @@ public class UserController extends BaseController {
         userModel.setRegisterMode("by phone");
         userModel.setThirdPartyId("");
 
+        // 调用validator对各项信息进行验证
+        ValidationResult validationResult = validator.validateBean(userModel);
+        if (validationResult.isError()){
+            throw new BusinessException(EnumBusinessError.USER_PARAM_ERROR, validationResult.getErrorMsg());
+        }
+
         // 调用service层处理用户注册
         userService.register(userModel);
         return CommonReturnType.create("success", "注册成功");
@@ -159,7 +167,7 @@ public class UserController extends BaseController {
     public CommonReturnType userLogin(@RequestParam(name = "telephone") String telephone,
                                       @RequestParam(name = "password") String password)
             throws NoSuchAlgorithmException, BusinessException {
-        if (!phoneNumIsLegal(telephone)) {
+        if (phoneNumIsIllegal(telephone)) {
             throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "手机号格式不正确！");
         }
         if (StringUtils.isEmpty(password)) {
@@ -186,7 +194,7 @@ public class UserController extends BaseController {
      *
      * @return 合法为true，不合法为false
      */
-    public boolean phoneNumIsLegal(String phoneNumber) {
+    public boolean phoneNumIsIllegal(String phoneNumber) {
         String numbers = "1234567890";
         if (phoneNumber.length() == 11) {
             char[] chars = phoneNumber.toCharArray();
@@ -197,9 +205,9 @@ public class UserController extends BaseController {
                     break;
                 }
             }
-            return flag;
+            return !flag;
         }
-        return false;
+        return true;
     }
 
     /**
@@ -207,7 +215,7 @@ public class UserController extends BaseController {
      *
      * @param password 用户密码
      * @return 加密后的密码
-     * @throws NoSuchAlgorithmException
+     * @throws NoSuchAlgorithmException  不存在此算法
      */
     public String encryptPasswordBySha256(String password) throws NoSuchAlgorithmException {
         String salt = "#*@!3($Hjk_syf98w";

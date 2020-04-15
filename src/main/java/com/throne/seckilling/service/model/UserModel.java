@@ -1,17 +1,34 @@
 package com.throne.seckilling.service.model;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 /**
  * com.throne.seckilling.service.model
  * Created by throne on 2020/4/9
  */
 public class UserModel {
     private Integer id;
+
+    @NotBlank(message = "用户名不能为空")
     private String name;
+
+    @NotNull(message = "性别不能为空")
     private Byte gender;
+
+    @NotNull(message = "年龄不能为空")
+    @Min(message = "年龄必须大于0岁", value = 0)
+    @Max(message = "年龄不能大于150岁", value = 150)
     private Integer age;
+
+    @NotBlank(message = "手机号不能为空")
     private String telephone;
     private String registerMode;
     private String thirdPartyId;
+
+    @NotBlank(message = "手机号不能为空")
     private String encryptPwd;
 
     @Override

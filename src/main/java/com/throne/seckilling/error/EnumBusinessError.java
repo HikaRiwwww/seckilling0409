@@ -13,6 +13,7 @@ public enum EnumBusinessError implements CommonError {
     // 用户相关错误 10开头
     USER_NOT_EXSITS(10001, "用户不存在"),
     USER_LOGIN_FAILED(10002, "用户名或密码错误"),
+    USER_PARAM_ERROR(10003, "用户提交参数错误"),
     // 未知错误
     UNKNOWN_ERROR(88888, "未知错误"),
 
