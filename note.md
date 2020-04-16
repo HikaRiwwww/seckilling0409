@@ -37,4 +37,26 @@ ON DELETE  RESTRICT  ON UPDATE CASCADE);
         2) 配置```javaModelGenerator```,生成实体类的存放位置
         3) 配置```sqlMapGenerator```,生成xml映射文件的存放位置
         4) 配置```javaClientGenerator```,生成dao接口类的存放位置 
-    2. 执行命令```mybatis-generator:generate```,等待各类文件的自动生成,mysql驱动8.0版本会出现[Cannot obtain primary key information from the database, generated objects may be incomplete](http://m.aspku.com/view-326284.html)的WARNING,最好用5.x版本,或者在uri中加上nullCatalogMeansCurrent=true`` 
+    2. 执行命令```mybatis-generator:generate```,等待各类文件的自动生成,mysql驱动8.0版本会出现[Cannot obtain primary key information from the database, generated objects may be incomplete](http://m.aspku.com/view-326284.html)的WARNING,最好用5.x版本,或者在uri中加上nullCatalogMeansCurrent=true``
+    
+    
+
+### 创建商品表
+```mysql
+create table item_info(
+id int primary key auto_increment,
+title varchar(50) not null default "",
+price decimal not null default 0,
+description varchar(500) not null default "",
+img_url varchar(500) not null default "",
+sales int not null default 0);
+```     
+```mysql
+create table item_stock(
+id int primary key auto_increment,
+stock int not null default 0,
+item_id int not null,
+constraint foreign key (item_id) references item_info(id)
+on delete restrict on update cascade
+);
+```

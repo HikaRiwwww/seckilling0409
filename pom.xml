@@ -63,12 +63,6 @@
             <artifactId>commons-codec</artifactId>
             <version>1.10</version>
         </dependency>
-        <dependency>
-            <groupId>org.hibernate.validator</groupId>
-            <artifactId>hibernate-validator</artifactId>
-            <version>6.0.17.Final</version>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -103,10 +97,10 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!--  todo: 实际开发不要使用   允许移动生成的文件-->
+                    <!--  todo: 实际开发不要使用   true为允许移动生成的文件-->
                     <verbose>true</verbose>
-                    <!--  todo: 实际开发不要使用   允许自动覆盖文件-->
-                    <overwrite>true</overwrite>
+                    <!--  todo: 实际开发不要使用   true允许自动覆盖文件-->
+                    <overwrite>false</overwrite>
                     <configurationFile>src/main/resources/mybatis-generator.xml</configurationFile>
                 </configuration>
             </plugin>
