@@ -12,12 +12,13 @@ import com.throne.seckilling.validator.ValidationResult;
 import com.throne.seckilling.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-
+@Service
 public class ItemServiceImpl implements ItemService {
 
     @Autowired
@@ -76,7 +77,7 @@ public class ItemServiceImpl implements ItemService {
             return null;
         }
         ItemStockDO itemStockDO = new ItemStockDO();
-        itemStockDO.setItemId(itemModel.getStock());
+        itemStockDO.setStock(itemModel.getStock());
         itemStockDO.setItemId(itemModel.getId());
         return itemStockDO;
     }
