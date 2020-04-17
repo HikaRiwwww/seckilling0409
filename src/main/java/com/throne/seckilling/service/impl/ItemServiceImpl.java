@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
@@ -29,13 +30,20 @@ public class ItemServiceImpl implements ItemService {
     private ValidatorImpl validator;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public List<ItemModel> listItems() {
+        List<ItemDO> itemDOList = itemDOMapper.listAllItems();
+        List<ItemModel> itemModelList = itemDOList.stream().map(itemDO -> {
+            ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemDO.getId());
+            ItemModel itemModel = convertItemModelFromItemDO(itemDO);
+            itemModel.setStock(itemStockDO.getStock());
+            return itemModel;
+        }).collect(Collectors.toList());
+        return itemModelList;
 
-        return null;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ItemModel createItem(ItemModel itemModel) throws BusinessException {
         // 校验入参
         ValidationResult result = validator.validateBean(itemModel);
@@ -54,8 +62,11 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemModel getItemById(Integer id) {
+    public ItemModel getItemById(Integer id) throws BusinessException {
         ItemDO itemDO = itemDOMapper.selectByPrimaryKey(id);
+        if (itemDO==null){
+            throw new BusinessException(EnumBusinessError.ITEM_NOT_EXSITS);
+        }
         ItemModel itemModel = convertItemModelFromItemDO(itemDO);
         ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemModel.getId());
         itemModel.setStock(itemStockDO.getStock());

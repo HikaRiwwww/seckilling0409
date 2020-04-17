@@ -10,5 +10,5 @@ public interface ItemService {
 
     ItemModel createItem(ItemModel itemModel) throws BusinessException;
 
-    ItemModel getItemById(Integer id);
+    ItemModel getItemById(Integer id) throws BusinessException;
 }

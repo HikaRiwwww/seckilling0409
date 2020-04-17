@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/jquery-3.5.0.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/login.css">
+    <title>商品详情</title>
+</head>
+
+<body class="login">
+<div class="content">
+    <h3>商品详情</h3>
+    <div>
+        <label class="control-label" for="item_title">商品名称</label>
+        <h4 id="item_title"></h4>
+        <label class="control-label" for="item_price">商品价格</label>
+        <h4 id="item_price"></h4>
+
+        <div>
+            <img id=item_img width="280px" src="">
+        </div>
+
+        <h4 id="item_desciption"></h4>
+
+        <label class="control-label" for="item_stock">库存</label>
+        <h4 id="item_stock"></h4>
+        <div class="form-actions">
+            <button class="btn red-thunderbird" type="submit" id="seckill">点击秒sa~~！！！！</button>
+        </div>
+
+    </div>
+</div>
+
+
+</body>
+
+
+<script>
+    $(function () {
+        var itemId = getId();
+        $.ajax({
+            type: "GET",
+            url: "/item/get_details?id="+itemId,
+            success: function (data) {
+                if (data.status === "success"){
+                    var details = data.data
+                    $("#item_img").attr("src", details.imgUrl)
+                    $("#item_title").text(details.title)
+                    $("#item_price").text(details.price)
+                    $("#item_stock").text(details.stock)
+                }else {
+                    alert(data.errorMsg)
+                }
+            },
+            error:function (data) {
+                alert("获取商品失败："+data.responseText)
+            }
+        })
+    })
+
+    function getId() {
+        return window.location.search.split("=")[1];
+    }
+</script>
+</html>

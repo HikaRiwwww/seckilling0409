@@ -80,4 +80,5 @@ public interface ItemDOMapper {
      * @mbg.generated Thu Apr 16 10:18:47 CST 2020
      */
     int updateByPrimaryKey(ItemDO record);
+    List<ItemDO> listAllItems();
 }

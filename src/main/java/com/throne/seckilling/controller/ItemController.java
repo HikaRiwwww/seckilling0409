@@ -68,10 +68,16 @@ public class ItemController extends BaseController {
     @RequestMapping(value = "/list")
     @ResponseBody
     public CommonReturnType getItemList(){
-
-        return CommonReturnType.create(null);
+        List<ItemModel> itemModels = itemService.listItems();
+        return CommonReturnType.create("success", itemModels);
     }
 
+    @RequestMapping("/get_details")
+    @ResponseBody
+    public CommonReturnType getItemDetail(@RequestParam (name = "id") Integer id ) throws BusinessException {
+        ItemModel itemById = itemService.getItemById(id);
+        return CommonReturnType.create("success", itemById);
+    }
 
     public ItemModel convertVOToModel(ItemVO itemVO){
         ItemModel itemModel = new ItemModel();
