@@ -24,4 +24,7 @@ public interface SequenceDOMapper {
     int insertSelective(SequenceDO record);
 
     SequenceDO getSequenceByName(@Param(value = "name") String name);
+
+    void updateByPrimaryKeySelective(SequenceDO sequenceDO);
+
 }

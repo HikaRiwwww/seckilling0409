@@ -25,6 +25,9 @@
 
         <h4 id="item_desciption"></h4>
 
+        <label class="control-label" for="item_sales">销量</label>
+        <h4 id="item_sales"></h4>
+
         <label class="control-label" for="item_stock">库存</label>
         <h4 id="item_stock"></h4>
         <div class="form-actions">
@@ -43,36 +46,37 @@
         var itemId = getId();
         $.ajax({
             type: "GET",
-            url: "/item/get_details?id="+itemId,
+            url: "/item/get_details?id=" + itemId,
             success: function (data) {
-                if (data.status === "success"){
+                if (data.status === "success") {
                     var details = data.data
                     $("#item_img").attr("src", details.imgUrl)
                     $("#item_title").text(details.title)
                     $("#item_price").text(details.price)
+                    $("#item_sales").text(details.sales)
                     $("#item_stock").text(details.stock)
-                }else {
+                } else {
                     alert(data.errorMsg)
                 }
             },
-            error:function (data) {
-                alert("获取商品失败："+data.responseText)
+            error: function (data) {
+                alert("获取商品失败：" + data.responseText)
             }
         })
 
         $("#seckill").on("click", function () {
             $.ajax({
-                type:"POST",
+                type: "POST",
                 url: "/order/create_order",
-                data:{"item_id":itemId, "amount": 1}, // todo: amount暂时先写死，后面再改
-                success:function (data) {
-                    if(data.status ==="success"){
+                data: {"item_id": itemId, "amount": 1}, // todo: amount暂时先写死，后面再改
+                success: function (data) {
+                    if (data.status === "success") {
                         alert("下单成功")
-                    }else {
+                    } else {
                         alert(data.data.errorMsg)
                         console.log(data.data.errorCode)
-                        if (data.data.errorCode===10004){
-                            window.location.href="/user/login_page"
+                        if (data.data.errorCode === 10004) {
+                            window.location.href = "/user/login_page"
                         }
                     }
                 },

@@ -51,9 +51,14 @@ public class OrderServiceImpl implements OrderService {
         if (!isDecreased) {
             throw new BusinessException(EnumBusinessError.NOT_ENOUGH_STOCK);
         }
+        // 增加销量
+        itemService.increaseSalesById(itemId, amount);
+
         //订单入库
         OrderModel orderModel = new OrderModel();
         String orderNum = generateOrderNum();
+        orderModel.setUserId(userId);
+        orderModel.setItemId(itemId);
         orderModel.setId(orderNum);
         orderModel.setAmount(amount);
         orderModel.setItemPrice(itemById.getPrice());
@@ -94,13 +99,12 @@ public class OrderServiceImpl implements OrderService {
         }else {
             sequenceDO.setCurrentVal(currentVal);
         }
-        sequenceDOMapper.insertSelective(sequenceDO);
+        sequenceDOMapper.updateByPrimaryKeySelective(sequenceDO);
         for (int i = 0; i < 6 - String.valueOf(currentVal).length(); i++) {
             builder.append("0");
         }
         builder.append(currentVal);
         builder.append("00");
-        System.out.println("订单号" + builder.toString());
         return builder.toString();
     }
 

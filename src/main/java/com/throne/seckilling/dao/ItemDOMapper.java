@@ -84,4 +84,6 @@ public interface ItemDOMapper {
     int updateByPrimaryKey(ItemDO record);
 
     List<ItemDO> listAllItems();
+
+    void increaseSalesById(@Param(value = "itemId") Integer itemId, @Param(value = "amount") Integer amount);
 }

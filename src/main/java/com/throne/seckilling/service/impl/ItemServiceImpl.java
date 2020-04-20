@@ -22,6 +22,11 @@ import java.util.stream.Collectors;
 @Service
 public class ItemServiceImpl implements ItemService {
 
+    @Override
+    public void increaseSalesById(Integer itemId, Integer amount) {
+        itemDOMapper.increaseSalesById(itemId, amount);
+    }
+
     @Autowired
     private ItemDOMapper itemDOMapper;
     @Autowired
