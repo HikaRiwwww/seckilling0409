@@ -40,7 +40,7 @@
                         item_list = data.data;
                         render();
                     }else {
-                        alert("获取商品列表失败："+data.errMsg)
+                        alert("获取商品列表失败："+data.data.errMsg)
                     }
                 },
                 error: function (data) {

@@ -3,7 +3,9 @@ package com.throne.seckilling.dao;
 import com.throne.seckilling.data_object.ItemStockDO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface ItemStockDOMapper {
 
 
@@ -58,5 +60,7 @@ public interface ItemStockDOMapper {
     int updateByPrimaryKey(ItemStockDO record);
 
     ItemStockDO selectByItemId(Integer itemId);
+
+    int decreaseItemStock(@Param(value = "itemId") Integer itemId, @Param(value = "amount") Integer amount);
 
 }

@@ -59,10 +59,33 @@
                 alert("获取商品失败："+data.responseText)
             }
         })
+
+        $("#seckill").on("click", function () {
+            $.ajax({
+                type:"POST",
+                url: "/order/create_order",
+                data:{"item_id":itemId, "amount": 1}, // todo: amount暂时先写死，后面再改
+                success:function (data) {
+                    if(data.status ==="success"){
+                        alert("下单成功")
+                    }else {
+                        alert(data.data.errorMsg)
+                        console.log(data.data.errorCode)
+                        if (data.data.errorCode===10004){
+                            window.location.href="/user/login_page"
+                        }
+                    }
+                },
+                error: function (data) {
+                    alert("下单失败：" + data.responseText)
+                }
+            })
+        })
     })
 
     function getId() {
         return window.location.search.split("=")[1];
     }
+
 </script>
 </html>

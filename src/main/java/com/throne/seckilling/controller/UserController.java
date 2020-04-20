@@ -16,7 +16,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.annotation.Resources;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.MessageDigest;
@@ -56,7 +55,7 @@ public class UserController extends BaseController {
         UserVO userVO = new UserVO();
 
         if (userModel == null) {
-            throw new BusinessException(EnumBusinessError.USER_NOT_EXSITS);
+            throw new BusinessException(EnumBusinessError.USER_NOT_EXISTS);
         }
         BeanUtils.copyProperties(userModel, userVO);
         return CommonReturnType.create(userVO);

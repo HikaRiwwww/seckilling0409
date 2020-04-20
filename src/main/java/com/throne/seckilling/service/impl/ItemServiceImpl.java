@@ -32,13 +32,12 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemModel> listItems() {
         List<ItemDO> itemDOList = itemDOMapper.listAllItems();
-        List<ItemModel> itemModelList = itemDOList.stream().map(itemDO -> {
+        return itemDOList.stream().map(itemDO -> {
             ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemDO.getId());
             ItemModel itemModel = convertItemModelFromItemDO(itemDO);
             itemModel.setStock(itemStockDO.getStock());
             return itemModel;
         }).collect(Collectors.toList());
-        return itemModelList;
 
     }
 
@@ -62,10 +61,16 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    public boolean decreaseItemStock(Integer itemId, Integer amount) {
+        int affectedRowCount = itemStockDOMapper.decreaseItemStock(itemId, amount);
+        return affectedRowCount == 1;
+    }
+
+    @Override
     public ItemModel getItemById(Integer id) throws BusinessException {
         ItemDO itemDO = itemDOMapper.selectByPrimaryKey(id);
         if (itemDO==null){
-            throw new BusinessException(EnumBusinessError.ITEM_NOT_EXSITS);
+            throw new BusinessException(EnumBusinessError.ITEM_NOT_EXISTS);
         }
         ItemModel itemModel = convertItemModelFromItemDO(itemDO);
         ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemModel.getId());

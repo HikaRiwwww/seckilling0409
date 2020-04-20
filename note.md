@@ -60,3 +60,32 @@ constraint foreign key (item_id) references item_info(id)
 on delete restrict on update cascade
 );
 ```
+
+### 创建订单表
+
+```mysql
+drop table if exists order_info;
+create table order_info(
+id varchar(30) not null primary key default '',
+item_price double not null default 0,
+total_price double not null default 0,
+amount int not null  default 0,
+user_id int not null default 0,
+item_id int not null default 0,
+constraint foreign key (item_id) references item_info(id)
+on delete restrict on update cascade ,
+constraint foreign key (user_id) references user_info(id)
+on delete restrict on update cascade 
+);
+```
+
+### 创建sequence_info表辅助生成订单号
+```mysql
+create table sequence_info(
+name varchar(20) not null default "",
+current_val int not null default 0,
+step int not null default 1,
+max_value int not null default 99999,
+init_value int not null default 1
+);
+```
