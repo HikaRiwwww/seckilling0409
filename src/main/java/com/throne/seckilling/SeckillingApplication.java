@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 
 @SpringBootApplication(scanBasePackages = {"com.throne.seckilling.*"})
-@RestController
+@Controller
 @MapperScan("com.throne.seckilling.dao")
 public class SeckillingApplication {
 
@@ -23,12 +24,7 @@ public class SeckillingApplication {
 
     @RequestMapping("/")
     public String home(){
-        UserDO userDO = userDOMapper.selectByPrimaryKey(1);
-        if(userDO==null){
-            return "用户对象不存在";
-        }else {
-            return userDO.getName();
-        }
+        return "/html/index.html";
     }
 
     public static void main(String[] args) {

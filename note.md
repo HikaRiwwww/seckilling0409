@@ -89,3 +89,16 @@ max_value int not null default 99999,
 init_value int not null default 1
 );
 ```
+
+### 创建促销活动表
+```mysql
+create table promo_info (
+id int primary key auto_increment,
+promo_name varchar(100) not null default "",
+start_date date not null default "0000-00-00 00:00:00",
+end_date date not null default "0000-00-00 00:00:00",
+item_id int not null,
+sec_price double not null,
+constraint foreign key (item_id) references item_info(id)
+on update cascade on delete restrict);
+```

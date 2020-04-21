@@ -3,7 +3,9 @@ package com.throne.seckilling.dao;
 import com.throne.seckilling.data_object.SequenceDO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface SequenceDOMapper {
 
 

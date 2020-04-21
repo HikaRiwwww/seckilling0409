@@ -1,5 +1,7 @@
 package com.throne.seckilling.controller.view_model;
 
+import com.throne.seckilling.service.model.PromoModel;
+
 import java.math.BigDecimal;
 
 /**
@@ -12,11 +14,72 @@ public class ItemVO {
 
     private BigDecimal price;
 
+    private Integer sales;
+
+    public Integer getSales() {
+        return sales;
+    }
+
+    public void setSales(Integer sales) {
+        this.sales = sales;
+    }
+
     private Integer stock;
 
     private String description;
 
     private String imgUrl;
+
+    private String promoStartDate;
+
+    private String promoEndDate;
+
+    private Integer promoStatus;
+
+    // 秒杀活动的id
+    private Integer promoId;
+
+    public Integer getPromoId() {
+        return promoId;
+    }
+
+    public void setPromoId(Integer promoId) {
+        this.promoId = promoId;
+    }
+
+    public BigDecimal getSecPrice() {
+        return secPrice;
+    }
+
+    public void setSecPrice(BigDecimal secPrice) {
+        this.secPrice = secPrice;
+    }
+
+    private BigDecimal secPrice;
+
+    public String getPromoStartDate() {
+        return promoStartDate;
+    }
+
+    public void setPromoStartDate(String promoStartDate) {
+        this.promoStartDate = promoStartDate;
+    }
+
+    public String getPromoEndDate() {
+        return promoEndDate;
+    }
+
+    public void setPromoEndDate(String promoEndDate) {
+        this.promoEndDate = promoEndDate;
+    }
+
+    public Integer getPromoStatus() {
+        return promoStatus;
+    }
+
+    public void setPromoStatus(Integer promoStatus) {
+        this.promoStatus = promoStatus;
+    }
 
     public Integer getId() {
         return id;

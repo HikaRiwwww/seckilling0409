@@ -43,6 +43,12 @@
                 success:function (data) {
                     if(data.status === "success"){
                         alert("登录成功")
+                        var refer = document.referrer
+                        if (refer.split('8080/')[1]===""){
+                            window.location.href = "/item/item_list"
+                        }else {
+                            window.location.href = document.referrer
+                        }
                     }else {
                         alert("登陆失败：" + data.data.errorMsg)
                     }

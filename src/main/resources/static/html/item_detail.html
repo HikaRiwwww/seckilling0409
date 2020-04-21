@@ -30,8 +30,10 @@
 
         <label class="control-label" for="item_stock">库存</label>
         <h4 id="item_stock"></h4>
+
+
         <div class="form-actions">
-            <button class="btn red-thunderbird" type="submit" id="seckill">点击秒sa~~！！！！</button>
+            <button class="btn blue" type="submit" id="seckill">点击购买</button>
         </div>
 
     </div>
@@ -44,19 +46,28 @@
 <script>
     $(function () {
         var itemId = getId();
+        var details = ""
         $.ajax({
             type: "GET",
             url: "/item/get_details?id=" + itemId,
             success: function (data) {
                 if (data.status === "success") {
-                    var details = data.data
+                    details = data.data
                     $("#item_img").attr("src", details.imgUrl)
                     $("#item_title").text(details.title)
                     $("#item_price").text(details.price)
                     $("#item_sales").text(details.sales)
                     $("#item_stock").text(details.stock)
+                    if (data.data.promoStatus === 2){
+                        $("#seckill").before('<div id="promo" style="color: red"></div>')
+                        $("#promo").text("该商品正于 "+data.data.promoStartDate+" 至 "+data.data.promoEndDate+" 间进行秒杀活动")
+                        $("#seckill").attr('class', 'btn red')
+                        $("#item_price").attr("style", "color:red")
+                        $("#item_price").text("秒杀价：" + details.secPrice)
+                    }
+
                 } else {
-                    alert(data.errorMsg)
+                    alert(data.data.errorMsg)
                 }
             },
             error: function (data) {
@@ -68,10 +79,11 @@
             $.ajax({
                 type: "POST",
                 url: "/order/create_order",
-                data: {"item_id": itemId, "amount": 1}, // todo: amount暂时先写死，后面再改
+                data: {"item_id": itemId, "amount": 1, "promoId": details.promoId}, // todo: amount暂时写死，先模拟秒杀单件商品的情况
                 success: function (data) {
                     if (data.status === "success") {
                         alert("下单成功")
+                        window.location.reload()
                     } else {
                         alert(data.data.errorMsg)
                         console.log(data.data.errorCode)

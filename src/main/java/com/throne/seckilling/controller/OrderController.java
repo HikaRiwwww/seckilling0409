@@ -33,7 +33,8 @@ public class OrderController extends BaseController {
     @ResponseBody
     public CommonReturnType createOrder(
             @RequestParam (name = "item_id") Integer itemId,
-            @RequestParam (name = "amount") Integer amount
+            @RequestParam (name = "amount") Integer amount,
+            @RequestParam (name = "promoId") Integer promoId
     ) throws BusinessException {
         // 判断用户登录状态
         HttpSession session = this.request.getSession();
@@ -43,7 +44,7 @@ public class OrderController extends BaseController {
             throw new BusinessException(EnumBusinessError.USER_NOT_LOGIN);
         }
         Integer userId = userModel.getId();
-        OrderModel orderModel = orderService.createOrder(userId, itemId, amount);
+        OrderModel orderModel = orderService.createOrder(userId, itemId, amount, promoId);
         // 调用service并获取执行结果
         if (orderModel!=null){
             return CommonReturnType.create("success");

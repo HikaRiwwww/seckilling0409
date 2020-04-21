@@ -36,7 +36,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount) throws BusinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
         // 校验下单状态
         ItemModel itemById = itemService.getItemById(itemId);
         if (itemById == null) {
@@ -46,6 +46,16 @@ public class OrderServiceImpl implements OrderService {
         if (userById == null) {
             throw new BusinessException(EnumBusinessError.USER_NOT_EXISTS);
         }
+        // 校验活动信息
+        if (promoId!=null){
+            if(!promoId.equals(itemById.getPromoModel().getId())){
+                throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动信息不存在");
+            }else if (itemById.getPromoModel().getStatus()!=2){
+                throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动尚未开始");
+            }
+
+        }
+
         //落单减库存
         boolean isDecreased = itemService.decreaseItemStock(itemId, amount);
         if (!isDecreased) {
@@ -61,8 +71,13 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setItemId(itemId);
         orderModel.setId(orderNum);
         orderModel.setAmount(amount);
-        orderModel.setItemPrice(itemById.getPrice());
-        orderModel.setTotalPrice(itemById.getPrice().multiply(new BigDecimal(amount)));
+        if (promoId!=null){
+            orderModel.setItemPrice(itemById.getPromoModel().getSecPrice());
+            orderModel.setPromoId(promoId);
+        }else {
+            orderModel.setItemPrice(itemById.getPrice());
+        }
+        orderModel.setTotalPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
         OrderDO orderDO = convertOrderModelToOderDO(orderModel);
         orderDOMapper.insertSelective(orderDO);
 

@@ -7,7 +7,9 @@ import com.throne.seckilling.data_object.ItemStockDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
 import com.throne.seckilling.service.ItemService;
+import com.throne.seckilling.service.PromoService;
 import com.throne.seckilling.service.model.ItemModel;
+import com.throne.seckilling.service.model.PromoModel;
 import com.throne.seckilling.validator.ValidationResult;
 import com.throne.seckilling.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
@@ -33,6 +35,8 @@ public class ItemServiceImpl implements ItemService {
     private ItemStockDOMapper itemStockDOMapper;
     @Autowired
     private ValidatorImpl validator;
+    @Autowired
+    private PromoService promoService;
 
     @Override
     public List<ItemModel> listItems() {
@@ -80,6 +84,13 @@ public class ItemServiceImpl implements ItemService {
         ItemModel itemModel = convertItemModelFromItemDO(itemDO);
         ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemModel.getId());
         itemModel.setStock(itemStockDO.getStock());
+
+        // 将秒杀活动融入商品service逻辑
+        PromoModel promoByItemId = promoService.getPromoByItemId(itemModel.getId());
+        if (promoByItemId!=null && promoByItemId.getStatus()!=3){
+            itemModel.setPromoModel(promoByItemId);
+        }
+
         return itemModel;
     }
 

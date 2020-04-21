@@ -50,6 +50,16 @@ public class OrderModel {
     // 用户id
     private Integer userId;
 
+    private Integer promoId;
+
+    public Integer getPromoId() {
+        return promoId;
+    }
+
+    public void setPromoId(Integer promoId) {
+        this.promoId = promoId;
+    }
+
     public void setItemPrice(BigDecimal itemPrice) {
         this.itemPrice = itemPrice;
     }

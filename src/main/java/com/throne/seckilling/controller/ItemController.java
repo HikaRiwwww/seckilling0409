@@ -5,6 +5,7 @@ import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.response.CommonReturnType;
 import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.model.ItemModel;
+import com.throne.seckilling.service.model.PromoModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 @Controller
@@ -76,7 +78,8 @@ public class ItemController extends BaseController {
     @ResponseBody
     public CommonReturnType getItemDetail(@RequestParam (name = "id") Integer id ) throws BusinessException {
         ItemModel itemById = itemService.getItemById(id);
-        return CommonReturnType.create("success", itemById);
+        ItemVO itemVO = convertModelToVO(itemById);
+        return CommonReturnType.create("success", itemVO);
     }
 
     public ItemModel convertVOToModel(ItemVO itemVO){
@@ -85,4 +88,17 @@ public class ItemController extends BaseController {
         return itemModel;
     }
 
+    public ItemVO convertModelToVO(ItemModel itemModel){
+        ItemVO itemVO = new ItemVO();
+        BeanUtils.copyProperties(itemModel, itemVO);
+        PromoModel promoModel = itemModel.getPromoModel();
+        if (promoModel != null){
+            itemVO.setPromoStartDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(promoModel.getStartDate()));
+            itemVO.setPromoEndDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(promoModel.getEndDate()));
+            itemVO.setPromoStatus(promoModel.getStatus());
+            itemVO.setSecPrice(promoModel.getSecPrice());
+            itemVO.setPromoId(promoModel.getId());
+        }
+        return itemVO;
+    }
 }

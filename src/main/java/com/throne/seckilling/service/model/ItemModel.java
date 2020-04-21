@@ -27,6 +27,16 @@ public class ItemModel {
     @Min(message = "销量必须大于或等于0", value = 0)
     private Integer sales;
 
+    private PromoModel promoModel;
+
+    public PromoModel getPromoModel() {
+        return promoModel;
+    }
+
+    public void setPromoModel(PromoModel promoModel) {
+        this.promoModel = promoModel;
+    }
+
     public Integer getId() {
         return id;
     }
