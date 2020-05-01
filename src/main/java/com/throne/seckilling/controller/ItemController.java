@@ -52,20 +52,6 @@ public class ItemController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/create_page", method = RequestMethod.GET)
-    public String getCreatePage(){
-        return "/html/create_item.html";
-    }
-
-    /**
-     * 返回商品列表的html页面
-     * @return html
-     */
-    @RequestMapping(value= "/item_list", method=RequestMethod.GET)
-    public String getListPage(){
-        return "/html/item_list.html";
-    }
-
 
     @RequestMapping(value = "/list")
     @ResponseBody

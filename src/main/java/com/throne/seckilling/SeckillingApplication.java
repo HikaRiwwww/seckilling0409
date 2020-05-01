@@ -22,11 +22,6 @@ public class SeckillingApplication {
     @Resource(name="userDOMapper")
     private UserDOMapper userDOMapper;
 
-    @RequestMapping("/")
-    public String home(){
-        return "/html/index.html";
-    }
-
     public static void main(String[] args) {
         SpringApplication.run(SeckillingApplication.class, args);
     }
