@@ -153,10 +153,6 @@ public class UserController extends BaseController {
         return CommonReturnType.create("success", "注册成功");
     }
 
-    @RequestMapping("/insert_telephone")
-    public String insertTelephone() {
-        return "/html/get_otp_code.html";
-    }
 
     @RequestMapping(value = "/login",
             method = {RequestMethod.POST},
@@ -183,10 +179,6 @@ public class UserController extends BaseController {
         return CommonReturnType.create("success", "登陆成功");
     }
 
-    @RequestMapping("/login_page")
-    public String getLoginPage() {
-        return "/html/login.html";
-    }
 
     /**
      * 校验手机号格式是否合法 11位 纯数字
