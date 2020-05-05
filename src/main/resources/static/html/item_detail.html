@@ -76,9 +76,15 @@
         })
 
         $("#seckill").on("click", function () {
+            var uuidToken = window.localStorage["uuidToken"]
+            if (uuidToken==null){
+              alert("用户尚未登录")
+              window.location.href = "/html/login.html"
+              return false;
+            }
             $.ajax({
                 type: "POST",
-                url: "/order/create_order",
+                url: "/order/create_order?uuidToken=" + uuidToken,
                 data: {"item_id": itemId, "amount": 1, "promoId": details.promoId}, // todo: amount暂时写死，先模拟秒杀单件商品的情况
                 success: function (data) {
                     if (data.status === "success") {
@@ -88,7 +94,7 @@
                         alert(data.data.errorMsg)
                         console.log(data.data.errorCode)
                         if (data.data.errorCode === 10004) {
-                            window.location.href = "/user/login_page"
+                            window.location.href = "/html/login.html"
                         }
                     }
                 },

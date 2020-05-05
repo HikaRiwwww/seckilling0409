@@ -43,11 +43,17 @@
 </body>
 <script>
     $(function () {
+        var telephone = window.localStorage['telephone']
+        if (telephone==null){
+          alert("请先验证手机号！")
+          window.location.href="/html/get_otp_code.html"
+        }
+
         $("#getotp").on("click", function () {
             $.ajax({
                 type: "POST",
                 contentType: "application/x-www-form-urlencoded",
-                url: "/user/register",
+                url: "/user/register?telephone=" + telephone,
                 data: {
                     "otpCode": $("#otpCode").val(),
                     "name": $("#name").val(),

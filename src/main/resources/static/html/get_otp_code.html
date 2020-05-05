@@ -40,6 +40,8 @@
                 success: function (data) {
                     if (data.status === "success") {
                         alert("验证码发送成功！");
+                        var telephone = data.data.telephone
+                        window.localStorage['telephone'] = telephone
                         window.location.href="/html/register.html"
                     } else {
                         alert("验证码发送失败：" + data.data.errorMsg);

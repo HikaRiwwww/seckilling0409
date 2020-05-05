@@ -12,6 +12,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 处理用户相关的Controller
@@ -40,6 +45,9 @@ public class UserController extends BaseController {
     @Autowired
     // 由spring帮助注入request对象，该对象是单例，但是实现了ThreadLocal
     private HttpServletRequest request;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Resource(name = "validator")
     private ValidatorImpl validator;
@@ -81,14 +89,15 @@ public class UserController extends BaseController {
         Random random = new Random();
         int otpCode = random.nextInt(89999) + 10000;
         // 将手机号与对应验证码存入session
-        HttpSession session = request.getSession();
-        session.setAttribute("telephone", telephone);
-        session.setAttribute("otpCode", Integer.toString(otpCode));
-
+//        HttpSession session = request.getSession();
+//        session.setAttribute("telephone", telephone);
+//        session.setAttribute("otpCode", Integer.toString(otpCode));
+        redisTemplate.opsForValue().set("telephone", telephone);
+        redisTemplate.opsForValue().set("otpCode", Integer.toString(otpCode));
         // 调用发送短信接口 略过
 
         System.out.println("手机号： " + telephone + " 验证码： " + otpCode);
-        return CommonReturnType.create("success", "短信发送成功");
+        return CommonReturnType.create("success", telephone);
 
     }
 
@@ -114,10 +123,10 @@ public class UserController extends BaseController {
             @RequestParam(name = "password") String password
     ) throws BusinessException {
         // 验证手机号与验证码是否匹配
-        HttpSession session = this.request.getSession();
-        String telephone = (String) session.getAttribute("telephone");
-        String otpCodeInSession = (String) session.getAttribute("otpCode");
-
+//        HttpSession session = this.request.getSession();
+//        String telephone = (String) session.getAttribute("telephone");
+        String telephone = request.getParameterMap().get("telephone")[0];
+        String otpCodeInSession = (String) redisTemplate.opsForValue().get("otpCode");
         if (telephone == null) {
             throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "请先输入手机号并获取验证码");
         }
@@ -173,10 +182,17 @@ public class UserController extends BaseController {
         if (userModel == null) {
             throw new BusinessException(EnumBusinessError.USER_LOGIN_FAILED);
         }
-        HttpSession session = this.request.getSession();
-        session.setAttribute("IS_LOGIN", true);
-        session.setAttribute("LOGIN_USER", userModel);
-        return CommonReturnType.create("success", "登陆成功");
+        String uuidToken = UUID.randomUUID().toString().replace("-", "");
+
+        redisTemplate.opsForValue().set(uuidToken, userModel);
+        redisTemplate.expire(uuidToken, 1, TimeUnit.HOURS);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("uuidToken", uuidToken);
+//        HttpSession session = this.request.getSession();
+//        session.setAttribute("IS_LOGIN", true);
+//        session.setAttribute("LOGIN_USER", userModel);
+        return CommonReturnType.create("success", responseData);
     }
 
 

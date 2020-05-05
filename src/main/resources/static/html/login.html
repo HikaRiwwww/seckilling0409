@@ -43,9 +43,12 @@
                 success:function (data) {
                     if(data.status === "success"){
                         alert("登录成功")
+                        console.log(data)
+                        var uuidToken = data.data.uuidToken
+                        window.localStorage["uuidToken"] = uuidToken
                         var refer = document.referrer
-                        if (refer.split('8080/')[1]===""){
-                            window.location.href = "/item/item_list"
+			                  if (refer.split('/')[3]===""){
+                            window.location.href = "/html/item_list.html"
                         }else {
                             window.location.href = document.referrer
                         }

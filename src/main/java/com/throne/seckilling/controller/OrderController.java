@@ -8,7 +8,9 @@ import com.throne.seckilling.service.OrderService;
 import com.throne.seckilling.service.model.OrderModel;
 import com.throne.seckilling.service.model.UserModel;
 import org.apache.catalina.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Map;
 
 /**
  * 订单相关路由
@@ -29,6 +32,8 @@ public class OrderController extends BaseController {
     @Autowired
     private HttpServletRequest request;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
     @RequestMapping("/create_order")
     @ResponseBody
     public CommonReturnType createOrder(
@@ -37,10 +42,16 @@ public class OrderController extends BaseController {
             @RequestParam (name = "promoId") Integer promoId
     ) throws BusinessException {
         // 判断用户登录状态
-        HttpSession session = this.request.getSession();
-        Boolean isLogin = (Boolean) session.getAttribute("IS_LOGIN");
-        UserModel userModel = (UserModel) session.getAttribute("LOGIN_USER");
-        if (isLogin==null || !isLogin){
+//        HttpSession session = this.request.getSession();
+//        Boolean isLogin = (Boolean) session.getAttribute("IS_LOGIN");
+//        UserModel userModel = (UserModel) session.getAttribute("LOGIN_USER");
+        String uuidToken = request.getParameterMap().get("uuidToken")[0];
+
+        if (StringUtils.isEmpty(uuidToken)){
+            throw new BusinessException(EnumBusinessError.USER_NOT_LOGIN);
+        }
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(uuidToken);
+        if (userModel == null) {
             throw new BusinessException(EnumBusinessError.USER_NOT_LOGIN);
         }
         Integer userId = userModel.getId();

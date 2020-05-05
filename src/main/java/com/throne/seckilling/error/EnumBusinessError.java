@@ -14,7 +14,7 @@ public enum EnumBusinessError implements CommonError {
     USER_NOT_EXISTS(10001, "用户不存在"),
     USER_LOGIN_FAILED(10002, "用户名或密码错误"),
     USER_PARAM_ERROR(10003, "用户提交参数错误"),
-    USER_NOT_LOGIN(10004, "用户尚未登陆"),
+    USER_NOT_LOGIN(10004, "用户尚未登录"),
 
     // 商品相关错误 20开头
     ITEM_NOT_EXISTS(20001, "所查询商品不存在"),
