@@ -16,14 +16,6 @@ public class ItemVO {
 
     private Integer sales;
 
-    public Integer getSales() {
-        return sales;
-    }
-
-    public void setSales(Integer sales) {
-        this.sales = sales;
-    }
-
     private Integer stock;
 
     private String description;
@@ -38,6 +30,16 @@ public class ItemVO {
 
     // 秒杀活动的id
     private Integer promoId;
+
+    private BigDecimal secPrice;
+
+    public Integer getSales() {
+        return sales;
+    }
+
+    public void setSales(Integer sales) {
+        this.sales = sales;
+    }
 
     public Integer getPromoId() {
         return promoId;
@@ -54,8 +56,6 @@ public class ItemVO {
     public void setSecPrice(BigDecimal secPrice) {
         this.secPrice = secPrice;
     }
-
-    private BigDecimal secPrice;
 
     public String getPromoStartDate() {
         return promoStartDate;

@@ -94,6 +94,8 @@ public class UserController extends BaseController {
 //        session.setAttribute("otpCode", Integer.toString(otpCode));
         redisTemplate.opsForValue().set("telephone", telephone);
         redisTemplate.opsForValue().set("otpCode", Integer.toString(otpCode));
+        redisTemplate.expire("telephone", 5, TimeUnit.MINUTES);
+        redisTemplate.expire("otpCode", 5, TimeUnit.MINUTES);
         // 调用发送短信接口 略过
 
         System.out.println("手机号： " + telephone + " 验证码： " + otpCode);

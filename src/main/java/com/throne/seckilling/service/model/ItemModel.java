@@ -2,12 +2,13 @@ package com.throne.seckilling.service.model;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
  * 商品信息的领域模型
  */
-public class ItemModel {
+public class ItemModel implements Serializable {
     private Integer id;
     @NotNull(message = "商品名称不能为空")
     private String title;

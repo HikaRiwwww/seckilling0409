@@ -1,12 +1,13 @@
 package com.throne.seckilling.service.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
 /**
  * 秒杀活动的领域模型
  */
-public class PromoModel {
+public class PromoModel implements Serializable {
     private Integer id;
     // 活动名称
     private String promoName;
