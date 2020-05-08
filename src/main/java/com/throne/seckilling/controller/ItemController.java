@@ -3,6 +3,7 @@ package com.throne.seckilling.controller;
 import com.throne.seckilling.controller.view_model.ItemVO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.response.CommonReturnType;
+import com.throne.seckilling.service.CacheService;
 import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.model.ItemModel;
 import com.throne.seckilling.service.model.PromoModel;
@@ -28,6 +29,9 @@ public class ItemController extends BaseController {
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CacheService cacheService;
 
     @RequestMapping(value = "/create_item", method = RequestMethod.POST)
     @ResponseBody
@@ -68,11 +72,16 @@ public class ItemController extends BaseController {
     @RequestMapping("/get_details")
     @ResponseBody
     public CommonReturnType getItemDetail(@RequestParam (name = "id") Integer id ) throws BusinessException {
-        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id.toString());
+        String item_key = "item_" + id.toString();
+        ItemModel itemModel = (ItemModel) cacheService.getCommonCache(item_key);
         if (itemModel == null){
-            itemModel = itemService.getItemById(id);
-            redisTemplate.opsForValue().set("item_"+id.toString(), itemModel);
-            redisTemplate.expire("item_"+id.toString(), 5, TimeUnit.MINUTES);
+            itemModel = (ItemModel) redisTemplate.opsForValue().get(item_key);
+            if (itemModel == null){
+                itemModel = itemService.getItemById(id);
+                redisTemplate.opsForValue().set(item_key, itemModel);
+                redisTemplate.expire(item_key, 5, TimeUnit.MINUTES);
+            }
+            cacheService.setCommonCache(item_key, itemModel);
         }
         ItemVO itemVO = convertModelToVO(itemModel);
         return CommonReturnType.create("success", itemVO);
