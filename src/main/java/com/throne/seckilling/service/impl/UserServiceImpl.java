@@ -8,12 +8,14 @@ import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
 import com.throne.seckilling.service.UserService;
 import com.throne.seckilling.service.model.UserModel;
-import org.apache.catalina.User;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用于处理用户信息的service
@@ -29,6 +31,21 @@ public class UserServiceImpl implements UserService {
     private UserDOMapper userDOMapper;
     @Autowired
     private UserPasswordDOMapper userPasswordDOMapper;
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Override
+    public UserModel getCachedUserById(Integer id) {
+        String userId = "user_" + id.toString();
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(userId);
+        if (userModel == null) {
+            userModel = this.getUserById(id);
+            redisTemplate.opsForValue().set(userId, userModel);
+            redisTemplate.expire(userId, 5, TimeUnit.MINUTES);
+        }
+        return userModel;
+
+    }
 
     /**
      * @param id 用户id
@@ -74,11 +91,11 @@ public class UserServiceImpl implements UserService {
 
         UserDO userDO = userDOMapper.selectByTelephone(telephone);
         UserModel userModel = convertUserDOToUserModel(userDO);
-        if(userModel==null){
+        if (userModel == null) {
             throw new BusinessException(EnumBusinessError.USER_LOGIN_FAILED);
         }
         UserPasswordDO userPasswordDO = userPasswordDOMapper.selectByUserId(userModel.getId());
-        if((userPasswordDO==null) || !encryptPassword.equals(userPasswordDO.getEncryptPwd())){
+        if ((userPasswordDO == null) || !encryptPassword.equals(userPasswordDO.getEncryptPwd())) {
             throw new BusinessException(EnumBusinessError.USER_LOGIN_FAILED);
         }
 
@@ -99,13 +116,13 @@ public class UserServiceImpl implements UserService {
         return userPasswordDO;
     }
 
-    public UserModel convertUserDOToUserModel(UserDO userDO){
+    public UserModel convertUserDOToUserModel(UserDO userDO) {
         UserModel userModel = new UserModel();
         BeanUtils.copyProperties(userDO, userModel);
         return userModel;
     }
 
-    public UserModel convertUserPasswordDOToUserModel(UserPasswordDO userPasswordDO, UserModel userModel){
+    public UserModel convertUserPasswordDOToUserModel(UserPasswordDO userPasswordDO, UserModel userModel) {
         userModel.setEncryptPwd(userPasswordDO.getEncryptPwd());
         return userModel;
     }

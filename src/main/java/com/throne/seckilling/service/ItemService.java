@@ -17,4 +17,7 @@ public interface ItemService {
 
     void increaseSalesById(Integer itemId, Integer amount);
 
+    ItemModel getCachedItemById(Integer id) throws BusinessException;
+
+
 }
