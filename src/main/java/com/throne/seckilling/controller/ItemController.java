@@ -5,6 +5,7 @@ import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.response.CommonReturnType;
 import com.throne.seckilling.service.CacheService;
 import com.throne.seckilling.service.ItemService;
+import com.throne.seckilling.service.PromoService;
 import com.throne.seckilling.service.model.ItemModel;
 import com.throne.seckilling.service.model.PromoModel;
 import org.springframework.beans.BeanUtils;
@@ -32,6 +33,9 @@ public class ItemController extends BaseController {
 
     @Autowired
     private CacheService cacheService;
+
+    @Autowired
+    private PromoService promoService;
 
     @RequestMapping(value = "/create_item", method = RequestMethod.POST)
     @ResponseBody
@@ -85,6 +89,13 @@ public class ItemController extends BaseController {
         }
         ItemVO itemVO = convertModelToVO(itemModel);
         return CommonReturnType.create("success", itemVO);
+    }
+
+    @RequestMapping(value = "/publish_promo")
+    @ResponseBody
+    public CommonReturnType publishPromo(@RequestParam (name="promo_id") int promo_id) throws BusinessException {
+        promoService.publishPromo(promo_id);
+        return CommonReturnType.create("success", "发布成功");
     }
 
     public ItemModel convertVOToModel(ItemVO itemVO){
