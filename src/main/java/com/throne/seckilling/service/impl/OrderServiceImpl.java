@@ -38,11 +38,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
         // 校验下单状态
-        ItemModel itemById = itemService.getItemById(itemId);
+        ItemModel itemById = itemService.getCachedItemById(itemId);
         if (itemById == null) {
             throw new BusinessException(EnumBusinessError.ITEM_NOT_EXISTS);
         }
-        UserModel userById = userService.getUserById(userId);
+        UserModel userById = userService.getCachedUserById(userId);
         if (userById == null) {
             throw new BusinessException(EnumBusinessError.USER_NOT_EXISTS);
         }

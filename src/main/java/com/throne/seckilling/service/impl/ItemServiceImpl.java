@@ -14,21 +14,20 @@ import com.throne.seckilling.validator.ValidationResult;
 import com.throne.seckilling.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
 
-    @Override
-    public void increaseSalesById(Integer itemId, Integer amount) {
-        itemDOMapper.increaseSalesById(itemId, amount);
-    }
-
+    @Autowired
+    private RedisTemplate redisTemplate;
     @Autowired
     private ItemDOMapper itemDOMapper;
     @Autowired
@@ -37,6 +36,23 @@ public class ItemServiceImpl implements ItemService {
     private ValidatorImpl validator;
     @Autowired
     private PromoService promoService;
+
+    @Override
+    public void increaseSalesById(Integer itemId, Integer amount) {
+        itemDOMapper.increaseSalesById(itemId, amount);
+    }
+
+    @Override
+    public ItemModel getCachedItemById(Integer id) throws BusinessException {
+        String itemId = "item_" + id.toString();
+        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get(itemId);
+        if(itemModel == null){
+            itemModel = this.getItemById(id);
+            redisTemplate.opsForValue().set(itemId, itemModel);
+            redisTemplate.expire(itemId, 5, TimeUnit.MINUTES);
+        }
+        return itemModel;
+    }
 
     @Override
     public List<ItemModel> listItems() {
@@ -78,7 +94,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemModel getItemById(Integer id) throws BusinessException {
         ItemDO itemDO = itemDOMapper.selectByPrimaryKey(id);
-        if (itemDO==null){
+        if (itemDO == null) {
             throw new BusinessException(EnumBusinessError.ITEM_NOT_EXISTS);
         }
         ItemModel itemModel = convertItemModelFromItemDO(itemDO);
@@ -87,7 +103,7 @@ public class ItemServiceImpl implements ItemService {
 
         // 将秒杀活动融入商品service逻辑
         PromoModel promoByItemId = promoService.getPromoByItemId(itemModel.getId());
-        if (promoByItemId!=null && promoByItemId.getStatus()!=3){
+        if (promoByItemId != null && promoByItemId.getStatus() != 3) {
             itemModel.setPromoModel(promoByItemId);
         }
 

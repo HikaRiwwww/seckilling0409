@@ -3,11 +3,14 @@ package com.throne.seckilling.controller;
 import com.throne.seckilling.controller.view_model.ItemVO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.response.CommonReturnType;
+import com.throne.seckilling.service.CacheService;
 import com.throne.seckilling.service.ItemService;
+import com.throne.seckilling.service.PromoService;
 import com.throne.seckilling.service.model.ItemModel;
 import com.throne.seckilling.service.model.PromoModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,12 +20,22 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 @RequestMapping("/item")
 public class ItemController extends BaseController {
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CacheService cacheService;
+
+    @Autowired
+    private PromoService promoService;
 
     @RequestMapping(value = "/create_item", method = RequestMethod.POST)
     @ResponseBody
@@ -63,9 +76,26 @@ public class ItemController extends BaseController {
     @RequestMapping("/get_details")
     @ResponseBody
     public CommonReturnType getItemDetail(@RequestParam (name = "id") Integer id ) throws BusinessException {
-        ItemModel itemById = itemService.getItemById(id);
-        ItemVO itemVO = convertModelToVO(itemById);
+        String item_key = "item_" + id.toString();
+        ItemModel itemModel = (ItemModel) cacheService.getCommonCache(item_key);
+        if (itemModel == null){
+            itemModel = (ItemModel) redisTemplate.opsForValue().get(item_key);
+            if (itemModel == null){
+                itemModel = itemService.getItemById(id);
+                redisTemplate.opsForValue().set(item_key, itemModel);
+                redisTemplate.expire(item_key, 5, TimeUnit.MINUTES);
+            }
+            cacheService.setCommonCache(item_key, itemModel);
+        }
+        ItemVO itemVO = convertModelToVO(itemModel);
         return CommonReturnType.create("success", itemVO);
+    }
+
+    @RequestMapping(value = "/publish_promo")
+    @ResponseBody
+    public CommonReturnType publishPromo(@RequestParam (name="promo_id") int promo_id) throws BusinessException {
+        promoService.publishPromo(promo_id);
+        return CommonReturnType.create("success", "发布成功");
     }
 
     public ItemModel convertVOToModel(ItemVO itemVO){

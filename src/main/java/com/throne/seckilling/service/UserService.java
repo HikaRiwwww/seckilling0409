@@ -8,9 +8,12 @@ import com.throne.seckilling.service.model.UserModel;
  * Created by throne on 2020/4/9
  */
 public interface UserService {
-    public UserModel getUserById(Integer id);
+    UserModel getUserById(Integer id);
 
-    public void register(UserModel userModel) throws BusinessException;
+    void register(UserModel userModel) throws BusinessException;
 
     UserModel loginValidate(String telephone, String encryptPassword) throws BusinessException;
+
+    UserModel getCachedUserById(Integer id);
+
 }
