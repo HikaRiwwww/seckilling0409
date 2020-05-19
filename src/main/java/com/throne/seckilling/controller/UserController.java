@@ -21,10 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -92,9 +89,9 @@ public class UserController extends BaseController {
 //        HttpSession session = request.getSession();
 //        session.setAttribute("telephone", telephone);
 //        session.setAttribute("otpCode", Integer.toString(otpCode));
-        redisTemplate.opsForValue().set("telephone", telephone);
-        redisTemplate.opsForValue().set("otpCode", Integer.toString(otpCode));
-        // 调用发送短信接口 略过
+        redisTemplate.opsForValue().set(telephone, otpCode);
+
+        // todo: 调用发送短信接口 略过
 
         System.out.println("手机号： " + telephone + " 验证码： " + otpCode);
         return CommonReturnType.create("success", telephone);
@@ -126,10 +123,10 @@ public class UserController extends BaseController {
 //        HttpSession session = this.request.getSession();
 //        String telephone = (String) session.getAttribute("telephone");
         String telephone = request.getParameterMap().get("telephone")[0];
-        String otpCodeInSession = (String) redisTemplate.opsForValue().get("otpCode");
         if (telephone == null) {
             throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "请先输入手机号并获取验证码");
         }
+        String otpCodeInSession = Objects.requireNonNull(redisTemplate.opsForValue().get(telephone)).toString();
         if (!com.alibaba.druid.util.StringUtils.equals(otpCode, otpCodeInSession)) {
             throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "验证码错误");
         }
