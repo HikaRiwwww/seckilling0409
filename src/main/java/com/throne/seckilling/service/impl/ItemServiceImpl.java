@@ -6,6 +6,7 @@ import com.throne.seckilling.data_object.ItemDO;
 import com.throne.seckilling.data_object.ItemStockDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
+import com.throne.seckilling.mq.MqProducer;
 import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.PromoService;
 import com.throne.seckilling.service.model.ItemModel;
@@ -36,6 +37,8 @@ public class ItemServiceImpl implements ItemService {
     private ValidatorImpl validator;
     @Autowired
     private PromoService promoService;
+    @Autowired
+    private MqProducer mqProducer;
 
     @Override
     public void increaseSalesById(Integer itemId, Integer amount) {
@@ -87,8 +90,21 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public boolean decreaseItemStock(Integer itemId, Integer amount) {
-        int affectedRowCount = itemStockDOMapper.decreaseItemStock(itemId, amount);
-        return affectedRowCount == 1;
+//        int affectedRowCount = itemStockDOMapper.decreaseItemStock(itemId, amount);
+//        return affectedRowCount == 1;
+        long result = redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount*-1 );
+        if (result >= 0){
+            boolean asyncResult = mqProducer.asyncDecreaseStock(itemId, amount);
+            if(!asyncResult){
+                // 如果消息同步不成功，则把redis内的数据回滚
+                redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount);
+            }
+            return true;
+        }else {
+            // 如果扣减库存至负数，则必定要将redis内的数据回滚
+            redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount);
+            return false;
+        }
     }
 
     @Override

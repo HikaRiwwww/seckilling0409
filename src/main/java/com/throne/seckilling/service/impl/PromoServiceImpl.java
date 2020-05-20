@@ -60,7 +60,7 @@ public class PromoServiceImpl implements PromoService {
             throw new BusinessException(EnumBusinessError.ITEM_NOT_EXISTS);
         }
         // 将商品信息同步至缓存
-        ItemModel itemModel = itemService.getItemById(promoDO.getId());
+        ItemModel itemModel = itemService.getItemById(promoDO.getItemId());
         redisTemplate.opsForValue().set("promo_item_stock_" + itemModel.getId(), itemModel.getStock());
 
     }

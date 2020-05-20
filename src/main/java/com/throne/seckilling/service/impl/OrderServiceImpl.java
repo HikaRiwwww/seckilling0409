@@ -6,6 +6,7 @@ import com.throne.seckilling.data_object.OrderDO;
 import com.throne.seckilling.data_object.SequenceDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
+import com.throne.seckilling.mq.MqProducer;
 import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.OrderService;
 import com.throne.seckilling.service.UserService;
@@ -33,6 +34,8 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private SequenceDOMapper sequenceDOMapper;
 
+    @Autowired
+    private MqProducer mqProducer;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
