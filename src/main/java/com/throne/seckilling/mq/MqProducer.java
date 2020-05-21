@@ -60,6 +60,11 @@ public class MqProducer {
                 return LocalTransactionState.COMMIT_MESSAGE;
             }
 
+            /*
+            在事务状态长时间未反馈或者事务执行过程异常中断时，主动获取事务状态的方法
+            而要知道一笔订单事务仅靠itemId和amount是不够的，因此需要引入订单流水的概念作为判断依据
+            即：需要知道当前处理的事务到底是哪一笔交易，根据其实际状态对其进采取正确的处理方式
+             */
             @Override
             public LocalTransactionState checkLocalTransaction(MessageExt messageExt) {
 

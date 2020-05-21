@@ -76,4 +76,10 @@ create table promo_info
     constraint foreign key (item_id) references item_info (id)
         on update cascade on delete restrict
 );
-
+drop table if exists stock_log;
+create table stock_log
+(
+    stock_log_id varchar(64) not null primary key,
+    item_id      int         not null default 0,
+    amount       int         not null default 0
+)
