@@ -1,12 +1,18 @@
 package com.throne.seckilling.mq;
 
 import com.alibaba.fastjson.JSON;
+import com.throne.seckilling.error.BusinessException;
+import com.throne.seckilling.service.OrderService;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.producer.LocalTransactionState;
+import org.apache.rocketmq.client.producer.TransactionListener;
+import org.apache.rocketmq.client.producer.TransactionMQProducer;
+import org.apache.rocketmq.client.producer.TransactionSendResult;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,20 +27,50 @@ import java.util.Map;
 @Component
 public class MqProducer {
 
-    private DefaultMQProducer producer;
-
     @Value("${mq.name-server.addr}")
     private String nameAddr;
 
     @Value("${mq.topic-name}")
     private String topicName;
 
+    @Autowired
+    private OrderService orderService;
+
+    private TransactionMQProducer producer;
 
     @PostConstruct
     public void init() throws MQClientException {
         // 初始化MQProducer
-        producer = new DefaultMQProducer("producer_group");
+        producer = new TransactionMQProducer("producer_group");
         producer.setNamesrvAddr(nameAddr);
+        producer.setTransactionListener(new TransactionListener() {
+            @Override
+            public LocalTransactionState executeLocalTransaction(Message message, Object args) {
+                Map<String, Object> argsMap = (Map<String, Object>) args;
+                Integer itemId = (Integer) argsMap.get("itemId");
+                Integer amount = (Integer) argsMap.get("amount");
+                Integer userId = (Integer) argsMap.get("userId");
+                Integer promoId = (Integer) argsMap.get("promoId");
+                try {
+                    orderService.createOrder(userId, itemId, amount, promoId);
+                } catch (BusinessException e) {
+                    e.printStackTrace();
+                    return LocalTransactionState.ROLLBACK_MESSAGE;
+                }
+                return LocalTransactionState.COMMIT_MESSAGE;
+            }
+
+            @Override
+            public LocalTransactionState checkLocalTransaction(MessageExt messageExt) {
+
+                String bodyStr = new String(messageExt.getBody());
+                Map<String, Object> bodyMap = JSON.parseObject(bodyStr, Map.class);
+                Integer itemId = (Integer) bodyMap.get("itemId");
+                Integer amount = (Integer) bodyMap.get("amount");
+
+                return null;
+            }
+        });
         producer.start();
     }
 
@@ -56,5 +92,27 @@ public class MqProducer {
             return false;
         }
         return true;
+    }
+
+    public boolean transactionalAsyncDecreaseStock(Integer userId, Integer itemId, Integer amount, Integer promoId) {
+        Map<String, Object> bodyMap = new HashMap<>();
+        bodyMap.put("itemId", itemId);
+        bodyMap.put("amount", amount);
+
+        Map<String, Object> argsMap = new HashMap<>();
+        argsMap.put("itemId", itemId);
+        argsMap.put("amount", amount);
+        argsMap.put("userId", userId);
+        argsMap.put("promoId", promoId);
+
+        Message message = new Message(topicName, "increase", JSON.toJSONBytes(bodyMap));
+        try {
+            TransactionSendResult result = producer.sendMessageInTransaction(message, argsMap);
+            LocalTransactionState state = result.getLocalTransactionState();
+            return state == LocalTransactionState.COMMIT_MESSAGE;
+        } catch (MQClientException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

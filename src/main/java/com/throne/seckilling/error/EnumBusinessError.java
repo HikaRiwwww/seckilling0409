@@ -19,6 +19,9 @@ public enum EnumBusinessError implements CommonError {
     // 商品相关错误 20开头
     ITEM_NOT_EXISTS(20001, "所查询商品不存在"),
     NOT_ENOUGH_STOCK(20001, "商品库存不足"),
+
+    // 队列消息错误
+    MESSAGE_SENT_FAILED(30001, "库存异步消息发送失败"),
     // 未知错误
     UNKNOWN_ERROR(88888, "未知错误"),
 

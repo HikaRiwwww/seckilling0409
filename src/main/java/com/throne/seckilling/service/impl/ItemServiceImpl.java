@@ -49,7 +49,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemModel getCachedItemById(Integer id) throws BusinessException {
         String itemId = "item_" + id.toString();
         ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get(itemId);
-        if(itemModel == null){
+        if (itemModel == null) {
             itemModel = this.getItemById(id);
             redisTemplate.opsForValue().set(itemId, itemModel);
             redisTemplate.expire(itemId, 5, TimeUnit.MINUTES);
@@ -89,20 +89,25 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    public boolean sendDecreaseMsg(Integer itemId, Integer amount) {
+        return mqProducer.asyncDecreaseStock(itemId, amount);
+    }
+
+    @Override
+    public boolean increaseItemStock(Integer itemId, Integer amount) {
+        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
+        return true;
+
+    }
+
+    @Override
     public boolean decreaseItemStock(Integer itemId, Integer amount) {
-//        int affectedRowCount = itemStockDOMapper.decreaseItemStock(itemId, amount);
-//        return affectedRowCount == 1;
-        long result = redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount*-1 );
-        if (result >= 0){
-            boolean asyncResult = mqProducer.asyncDecreaseStock(itemId, amount);
-            if(!asyncResult){
-                // 如果消息同步不成功，则把redis内的数据回滚
-                redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount);
-            }
+        long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount * -1);
+        if (result >= 0) {
             return true;
-        }else {
+        } else {
             // 如果扣减库存至负数，则必定要将redis内的数据回滚
-            redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount);
+            redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
             return false;
         }
     }

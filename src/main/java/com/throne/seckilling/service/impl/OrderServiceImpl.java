@@ -6,7 +6,6 @@ import com.throne.seckilling.data_object.OrderDO;
 import com.throne.seckilling.data_object.SequenceDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
-import com.throne.seckilling.mq.MqProducer;
 import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.OrderService;
 import com.throne.seckilling.service.UserService;
@@ -34,9 +33,6 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private SequenceDOMapper sequenceDOMapper;
 
-    @Autowired
-    private MqProducer mqProducer;
-
     @Transactional(rollbackFor = Exception.class)
     @Override
     public OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
@@ -50,22 +46,20 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(EnumBusinessError.USER_NOT_EXISTS);
         }
         // 校验活动信息
-        if (promoId!=null){
-            if(!promoId.equals(itemById.getPromoModel().getId())){
+        if (promoId != null) {
+            if (!promoId.equals(itemById.getPromoModel().getId())) {
                 throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动信息不存在");
-            }else if (itemById.getPromoModel().getStatus()!=2){
+            } else if (itemById.getPromoModel().getStatus() != 2) {
                 throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动尚未开始");
             }
 
         }
 
-        //落单减库存
+        //落单减库存  这里扣减的是redis中缓存的活动商品库存，此时，消息还未被同步给数据库
         boolean isDecreased = itemService.decreaseItemStock(itemId, amount);
         if (!isDecreased) {
             throw new BusinessException(EnumBusinessError.NOT_ENOUGH_STOCK);
         }
-        // 增加销量
-        itemService.increaseSalesById(itemId, amount);
 
         //订单入库
         OrderModel orderModel = new OrderModel();
@@ -74,15 +68,18 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setItemId(itemId);
         orderModel.setId(orderNum);
         orderModel.setAmount(amount);
-        if (promoId!=null){
+        if (promoId != null) {
             orderModel.setItemPrice(itemById.getPromoModel().getSecPrice());
             orderModel.setPromoId(promoId);
-        }else {
+        } else {
             orderModel.setItemPrice(itemById.getPrice());
         }
         orderModel.setTotalPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
         OrderDO orderDO = convertOrderModelToOderDO(orderModel);
         orderDOMapper.insertSelective(orderDO);
+
+        // todo: 增加销量 使用rocketmq进行管理
+        itemService.increaseSalesById(itemId, amount);
 
         return orderModel;
     }
@@ -114,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (currentVal >= sequenceDO.getMaxValue()) {
             sequenceDO.setCurrentVal(sequenceDO.getInitValue());
-        }else {
+        } else {
             sequenceDO.setCurrentVal(currentVal);
         }
         sequenceDOMapper.updateByPrimaryKeySelective(sequenceDO);
@@ -126,6 +123,5 @@ public class OrderServiceImpl implements OrderService {
         return builder.toString();
     }
 
-    ;
 
 }

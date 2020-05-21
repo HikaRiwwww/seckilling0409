@@ -58,9 +58,9 @@ public class ItemController extends BaseController {
         // 调用service处理
         ItemModel item = itemService.createItem(itemModel);
         // 返回创建结果
-        if (item == null){
+        if (item == null) {
             return CommonReturnType.create("failed", "商品创建失败");
-        }else {
+        } else {
             return CommonReturnType.create("success", "商品创建成功");
         }
     }
@@ -68,22 +68,22 @@ public class ItemController extends BaseController {
 
     @RequestMapping(value = "/list")
     @ResponseBody
-    public CommonReturnType getItemList(){
+    public CommonReturnType getItemList() {
         List<ItemModel> itemModels = itemService.listItems();
         return CommonReturnType.create("success", itemModels);
     }
 
     @RequestMapping("/get_details")
     @ResponseBody
-    public CommonReturnType getItemDetail(@RequestParam (name = "id") Integer id ) throws BusinessException {
+    public CommonReturnType getItemDetail(@RequestParam(name = "id") Integer id) throws BusinessException {
         String item_key = "item_" + id.toString();
         ItemModel itemModel = (ItemModel) cacheService.getCommonCache(item_key);
-        if (itemModel == null){
+        if (itemModel == null) {
             itemModel = (ItemModel) redisTemplate.opsForValue().get(item_key);
-            if (itemModel == null){
+            if (itemModel == null) {
                 itemModel = itemService.getItemById(id);
                 redisTemplate.opsForValue().set(item_key, itemModel);
-                redisTemplate.expire(item_key, 5, TimeUnit.MINUTES);
+                redisTemplate.expire(item_key, 1, TimeUnit.MINUTES);
             }
             cacheService.setCommonCache(item_key, itemModel);
         }
@@ -93,22 +93,22 @@ public class ItemController extends BaseController {
 
     @RequestMapping(value = "/publish_promo")
     @ResponseBody
-    public CommonReturnType publishPromo(@RequestParam (name="promo_id") int promo_id) throws BusinessException {
+    public CommonReturnType publishPromo(@RequestParam(name = "promo_id") int promo_id) throws BusinessException {
         promoService.publishPromo(promo_id);
         return CommonReturnType.create("success", "发布成功");
     }
 
-    public ItemModel convertVOToModel(ItemVO itemVO){
+    public ItemModel convertVOToModel(ItemVO itemVO) {
         ItemModel itemModel = new ItemModel();
         BeanUtils.copyProperties(itemVO, itemModel);
         return itemModel;
     }
 
-    public ItemVO convertModelToVO(ItemModel itemModel){
+    public ItemVO convertModelToVO(ItemModel itemModel) {
         ItemVO itemVO = new ItemVO();
         BeanUtils.copyProperties(itemModel, itemVO);
         PromoModel promoModel = itemModel.getPromoModel();
-        if (promoModel != null){
+        if (promoModel != null) {
             itemVO.setPromoStartDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(promoModel.getStartDate()));
             itemVO.setPromoEndDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(promoModel.getEndDate()));
             itemVO.setPromoStatus(promoModel.getStatus());
