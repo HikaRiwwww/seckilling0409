@@ -47,7 +47,7 @@ public class ItemServiceImpl implements ItemService {
 
 
     @Override
-    public boolean increaseSalesById(Integer itemId, Integer amount) {
+    public boolean increaseSalesIncacheById(Integer itemId, Integer amount) {
         redisTemplate.opsForValue().increment("promo_item_sales_" + itemId, amount);
         return true;
 
@@ -109,11 +109,21 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public boolean decreaseItemStock(Integer itemId, Integer amount) {
+    public void increaseSalesById(Integer itemId, Integer amount) {
+        itemDOMapper.increaseSalesById(itemId, amount);
+    }
+
+    @Override
+    public void decreaseCommonItemStock(Integer itemId, Integer amount) {
+        itemStockDOMapper.decreaseItemStock(itemId, amount);
+    }
+
+    @Override
+    public boolean decreasePromoItemStock(Integer itemId, Integer amount) {
         long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount * -1);
         if (result > 0) {
             return true;
-        }else if (result == 0){
+        } else if (result == 0) {
             /*
             当库存售罄时，在缓存中设置售罄标识，由Controller在每次创建订单前读取，
             如果存在售罄标识则直接抛出异常，从而保证不会初始化库存流水到数据库，
@@ -121,8 +131,7 @@ public class ItemServiceImpl implements ItemService {
              */
             redisTemplate.opsForValue().set("item_stock_invalid_" + itemId, true);
             return true;
-        }
-        else {
+        } else {
             // 如果扣减库存至负数，则必定要将redis内的数据回滚
             redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
             return false;

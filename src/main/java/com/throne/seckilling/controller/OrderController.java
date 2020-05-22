@@ -41,7 +41,7 @@ public class OrderController extends BaseController {
 
     /**
      * 创建订单的路由函数
-     *
+     * <p>
      * 使用分布式+队列+缓存后的下单流程：
      * 1. 活动商品的相关会通过发布流程注入缓存
      * 2. 下单交易首先在数据库中创建一条库存流水，用于后续追踪
@@ -72,15 +72,26 @@ public class OrderController extends BaseController {
         if (userModel == null) {
             throw new BusinessException(EnumBusinessError.USER_NOT_LOGIN);
         }
+        Integer userId = userModel.getId();
+
+        /*
+        如果没有活动id，则调用普通商品的下单逻辑
+        直接请求数据库，不占用秒杀通道
+         */
+
+        if (promoId == null) {
+            orderService.createCommonOrder(userId, itemId, amount);
+            return CommonReturnType.create("success");
+        }
+
 
         String invalidKey = "item_stock_invalid_" + itemId;
-        if (redisTemplate.hasKey(invalidKey)){
+        if (redisTemplate.hasKey(invalidKey)) {
             throw new BusinessException(EnumBusinessError.NOT_ENOUGH_STOCK);
         }
 
         // 创建订单前先初始化一条库存流水记录以便后续追踪
         String logId = itemService.initStockLog(itemId, amount);
-        Integer userId = userModel.getId();
         boolean isOrderCreated = mqProducer.transactionalAsyncDecreaseStock(userId, itemId, amount, promoId, logId);
         // 调用service并获取执行结果
         if (isOrderCreated) {

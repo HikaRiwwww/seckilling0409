@@ -37,9 +37,41 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private StockLogDOMapper stockLogDOMapper;
 
+
+    @Transactional
+    @Override
+    public OrderModel createCommonOrder(Integer userId, Integer itemId, Integer amount) throws BusinessException {
+        ItemModel itemById = itemService.getCachedItemById(itemId);
+        if (itemById == null) {
+            throw new BusinessException(EnumBusinessError.ITEM_NOT_EXISTS);
+        }
+        UserModel userById = userService.getCachedUserById(userId);
+        if (userById == null) {
+            throw new BusinessException(EnumBusinessError.USER_NOT_EXISTS);
+        }
+        // 落单减库存, 增加销量
+        itemService.decreaseCommonItemStock(itemId, amount);
+        itemService.increaseSalesById(itemId, amount);
+
+        //  订单入库
+        OrderModel orderModel = new OrderModel();
+        String orderNum = generateOrderNum();
+        orderModel.setUserId(userId);
+        orderModel.setItemId(itemId);
+        orderModel.setId(orderNum);
+        orderModel.setAmount(amount);
+        orderModel.setItemPrice(itemById.getPrice());
+        orderModel.setTotalPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
+        OrderDO orderDO = convertOrderModelToOderDO(orderModel);
+        orderDOMapper.insertSelective(orderDO);
+
+        return orderModel;
+
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) throws BusinessException {
+    public OrderModel createPromoOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) throws BusinessException {
         // 校验下单状态
         ItemModel itemById = itemService.getCachedItemById(itemId);
         if (itemById == null) {
@@ -56,17 +88,15 @@ public class OrderServiceImpl implements OrderService {
             } else if (itemById.getPromoModel().getStatus() != 2) {
                 throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动尚未开始");
             }
-
         }
-
         //落单减库存  这里扣减的是redis中缓存的活动商品库存，此时，消息还未被同步给数据库
-        boolean isDecreased = itemService.decreaseItemStock(itemId, amount);
+        boolean isDecreased = itemService.decreasePromoItemStock(itemId, amount);
         if (!isDecreased) {
             throw new BusinessException(EnumBusinessError.NOT_ENOUGH_STOCK);
         }
         // 增加销量 也先在redis中进行扣减，再发送异步消息让数据库同步数据进行管理
-        boolean isIncreased = itemService.increaseSalesById(itemId, amount);
-        if (!isIncreased){
+        boolean isIncreased = itemService.increaseSalesIncacheById(itemId, amount);
+        if (!isIncreased) {
             throw new BusinessException(EnumBusinessError.UNKNOWN_ERROR);
         }
 

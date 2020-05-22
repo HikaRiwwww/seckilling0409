@@ -12,11 +12,11 @@ public interface ItemService {
 
     ItemModel getItemById(Integer id) throws BusinessException;
 
-    boolean decreaseItemStock(Integer itemId, Integer amount);
+    boolean decreasePromoItemStock(Integer itemId, Integer amount);
 
     boolean increaseItemStock(Integer itemId, Integer amount);
 
-    boolean increaseSalesById(Integer itemId, Integer amount);
+    boolean increaseSalesIncacheById(Integer itemId, Integer amount);
 
     ItemModel getCachedItemById(Integer id) throws BusinessException;
 
@@ -24,4 +24,7 @@ public interface ItemService {
 
     String initStockLog(Integer itemId, Integer amount);
 
+    void decreaseCommonItemStock(Integer itemId, Integer amount);
+
+    void increaseSalesById(Integer itemId, Integer amount);
 }

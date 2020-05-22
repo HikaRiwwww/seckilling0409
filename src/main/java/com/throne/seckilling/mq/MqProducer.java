@@ -59,7 +59,7 @@ public class MqProducer {
                 Integer promoId = (Integer) argsMap.get("promoId");
                 String logId = (String) argsMap.get("logId");
                 try {
-                    orderService.createOrder(userId, itemId, amount, promoId, logId);
+                    orderService.createPromoOrder(userId, itemId, amount, promoId, logId);
                 } catch (BusinessException e) {
                     e.printStackTrace();
                     return LocalTransactionState.ROLLBACK_MESSAGE;
