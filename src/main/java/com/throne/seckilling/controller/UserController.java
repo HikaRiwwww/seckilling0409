@@ -86,9 +86,6 @@ public class UserController extends BaseController {
         Random random = new Random();
         int otpCode = random.nextInt(89999) + 10000;
         // 将手机号与对应验证码存入session
-//        HttpSession session = request.getSession();
-//        session.setAttribute("telephone", telephone);
-//        session.setAttribute("otpCode", Integer.toString(otpCode));
         redisTemplate.opsForValue().set(telephone, otpCode);
 
         // todo: 调用发送短信接口 略过
@@ -186,9 +183,6 @@ public class UserController extends BaseController {
 
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("uuidToken", uuidToken);
-//        HttpSession session = this.request.getSession();
-//        session.setAttribute("IS_LOGIN", true);
-//        session.setAttribute("LOGIN_USER", userModel);
         return CommonReturnType.create("success", responseData);
     }
 

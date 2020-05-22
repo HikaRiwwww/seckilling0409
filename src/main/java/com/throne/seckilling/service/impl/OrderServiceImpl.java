@@ -54,42 +54,15 @@ public class OrderServiceImpl implements OrderService {
         itemService.increaseSalesById(itemId, amount);
 
         //  订单入库
-        OrderModel orderModel = new OrderModel();
-        String orderNum = generateOrderNum();
-        orderModel.setUserId(userId);
-        orderModel.setItemId(itemId);
-        orderModel.setId(orderNum);
-        orderModel.setAmount(amount);
-        orderModel.setItemPrice(itemById.getPrice());
-        orderModel.setTotalPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
-        OrderDO orderDO = convertOrderModelToOderDO(orderModel);
-        orderDOMapper.insertSelective(orderDO);
-
-        return orderModel;
+        return setOrderIntoDB(userId, itemById, amount, null);
 
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public OrderModel createPromoOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) throws BusinessException {
-        // 校验下单状态
-        ItemModel itemById = itemService.getCachedItemById(itemId);
-        if (itemById == null) {
-            throw new BusinessException(EnumBusinessError.ITEM_NOT_EXISTS);
-        }
-        UserModel userById = userService.getCachedUserById(userId);
-        if (userById == null) {
-            throw new BusinessException(EnumBusinessError.USER_NOT_EXISTS);
-        }
-        // 校验活动信息
-        if (promoId != null) {
-            if (!promoId.equals(itemById.getPromoModel().getId())) {
-                throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动信息不存在");
-            } else if (itemById.getPromoModel().getStatus() != 2) {
-                throw new BusinessException(EnumBusinessError.PARAMETER_VALIDATION_ERROR, "活动尚未开始");
-            }
-        }
         //落单减库存  这里扣减的是redis中缓存的活动商品库存，此时，消息还未被同步给数据库
+        ItemModel itemById = itemService.getCachedItemById(itemId);
         boolean isDecreased = itemService.decreasePromoItemStock(itemId, amount);
         if (!isDecreased) {
             throw new BusinessException(EnumBusinessError.NOT_ENOUGH_STOCK);
@@ -102,22 +75,7 @@ public class OrderServiceImpl implements OrderService {
 
 
         //订单入库
-        OrderModel orderModel = new OrderModel();
-        String orderNum = generateOrderNum();
-        orderModel.setUserId(userId);
-        orderModel.setItemId(itemId);
-        orderModel.setId(orderNum);
-        orderModel.setAmount(amount);
-        if (promoId != null) {
-            orderModel.setItemPrice(itemById.getPromoModel().getSecPrice());
-            orderModel.setPromoId(promoId);
-        } else {
-            orderModel.setItemPrice(itemById.getPrice());
-        }
-        orderModel.setTotalPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
-        OrderDO orderDO = convertOrderModelToOderDO(orderModel);
-        orderDOMapper.insertSelective(orderDO);
-
+        OrderModel orderModel = setOrderIntoDB(userId, itemById, amount, promoId);
 
         /*
             设置库存流水状态为创建成功
@@ -173,6 +131,32 @@ public class OrderServiceImpl implements OrderService {
         builder.append("00");
         return builder.toString();
     }
+
+    /**
+     * 订单入库方法
+     * @return
+     */
+    private OrderModel setOrderIntoDB(Integer userId, ItemModel itemById, Integer amount, Integer promoId){
+        Integer itemId = itemById.getId();
+        OrderModel orderModel = new OrderModel();
+        String orderNum = generateOrderNum();
+        orderModel.setUserId(userId);
+        orderModel.setItemId(itemId);
+        orderModel.setId(orderNum);
+        orderModel.setAmount(amount);
+        if (promoId != null) {
+            orderModel.setItemPrice(itemById.getPromoModel().getSecPrice());
+            orderModel.setPromoId(promoId);
+        } else {
+            orderModel.setItemPrice(itemById.getPrice());
+        }
+        orderModel.setTotalPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
+        OrderDO orderDO = convertOrderModelToOderDO(orderModel);
+        orderDOMapper.insertSelective(orderDO);
+
+        return orderModel;
+    }
+
 
 
 }

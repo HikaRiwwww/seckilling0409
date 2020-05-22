@@ -7,12 +7,14 @@ import com.throne.seckilling.mq.MqProducer;
 import com.throne.seckilling.response.CommonReturnType;
 import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.OrderService;
+import com.throne.seckilling.service.PromoService;
 import com.throne.seckilling.service.model.UserModel;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -39,6 +41,8 @@ public class OrderController extends BaseController {
     @Autowired
     private ItemService itemService;
 
+    @Autowired
+    private PromoService promoService;
     /**
      * 创建订单的路由函数
      * <p>
@@ -60,7 +64,8 @@ public class OrderController extends BaseController {
     public CommonReturnType createOrder(
             @RequestParam(name = "item_id") Integer itemId,
             @RequestParam(name = "amount") Integer amount,
-            @RequestParam(name = "promoId") Integer promoId
+            @RequestParam(name = "promoId") Integer promoId,
+            @RequestParam(name = "wand") String wand
     ) throws BusinessException {
         // 判断用户登录状态
         String uuidToken = request.getParameterMap().get("uuidToken")[0];
@@ -78,7 +83,6 @@ public class OrderController extends BaseController {
         如果没有活动id，则调用普通商品的下单逻辑
         直接请求数据库，不占用秒杀通道
          */
-
         if (promoId == null) {
             orderService.createCommonOrder(userId, itemId, amount);
             return CommonReturnType.create("success");
@@ -100,5 +104,29 @@ public class OrderController extends BaseController {
             throw new BusinessException(EnumBusinessError.UNKNOWN_ERROR, "下单失败");
         }
     }
+
+
+    @RequestMapping(value = "/get_wand", method = RequestMethod.POST)
+    @ResponseBody
+    public CommonReturnType generateWand(
+            @RequestParam(name = "item_id") Integer itemId,
+            @RequestParam(name = "promoId") Integer promoId
+    ) throws BusinessException {
+        // 判断用户登录状态
+        String uuidToken = request.getParameterMap().get("uuidToken")[0];
+
+        if (StringUtils.isEmpty(uuidToken)) {
+            throw new BusinessException(EnumBusinessError.USER_NOT_LOGIN);
+        }
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(uuidToken);
+        Integer userId = userModel.getId();
+        String wand = promoService.generateWand(promoId, userId, promoId);
+        if (wand == null){
+            throw new BusinessException(EnumBusinessError.USER_PARAM_ERROR, "获取令牌失败");
+        }
+
+        return CommonReturnType.create(wand);
+    }
+
 
 }

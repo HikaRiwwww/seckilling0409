@@ -10,4 +10,6 @@ public interface PromoService {
     PromoModel getPromoByItemId(Integer itemId);
 
     void publishPromo(Integer promoId) throws BusinessException;
+
+    String generateWand(Integer promoId, Integer userId, Integer itemId);
 }
