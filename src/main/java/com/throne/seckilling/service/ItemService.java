@@ -16,10 +16,12 @@ public interface ItemService {
 
     boolean increaseItemStock(Integer itemId, Integer amount);
 
-    void increaseSalesById(Integer itemId, Integer amount);
+    boolean increaseSalesById(Integer itemId, Integer amount);
 
     ItemModel getCachedItemById(Integer id) throws BusinessException;
 
     boolean sendDecreaseMsg(Integer itemId, Integer amount);
+
+    String initStockLog(Integer itemId, Integer amount);
 
 }

@@ -1,6 +1,7 @@
 package com.throne.seckilling.mq;
 
 import com.alibaba.fastjson.JSON;
+import com.throne.seckilling.dao.ItemDOMapper;
 import com.throne.seckilling.dao.ItemStockDOMapper;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -31,6 +32,8 @@ public class MqConsumer {
 
     @Autowired
     private ItemStockDOMapper itemStockDOMapper;
+    @Autowired
+    private ItemDOMapper itemDOMapper;
 
     @PostConstruct
     public void init() throws MQClientException {
@@ -48,8 +51,7 @@ public class MqConsumer {
                 Integer itemId = (Integer) bodyMap.get("itemId");
                 Integer amount = (Integer) bodyMap.get("amount");
                 itemStockDOMapper.decreaseItemStock(itemId, amount);
-                // todo: 落单减库存的同时还需要实现增加销量的过程
-                // 返回成功后，消息就不会被二次消费
+                itemDOMapper.increaseSalesById(itemId, amount);
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });

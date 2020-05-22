@@ -124,7 +124,7 @@
                     <!--  todo: 实际开发不要使用   true为允许移动生成的文件-->
                     <verbose>true</verbose>
                     <!--  todo: 实际开发不要使用   true允许自动覆盖文件-->
-                    <overwrite>false</overwrite>
+                    <overwrite>true</overwrite>
                     <configurationFile>src/main/resources/mybatis-generator.xml</configurationFile>
                 </configuration>
             </plugin>

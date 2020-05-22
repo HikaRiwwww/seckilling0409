@@ -81,5 +81,6 @@ create table stock_log
 (
     stock_log_id varchar(64) not null primary key,
     item_id      int         not null default 0,
-    amount       int         not null default 0
+    amount       int         not null default 0,
+    status       int comment '1为初始状态，2为下单成功，3为回滚'
 )

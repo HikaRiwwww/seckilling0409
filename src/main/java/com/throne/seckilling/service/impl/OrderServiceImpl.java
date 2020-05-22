@@ -2,8 +2,10 @@ package com.throne.seckilling.service.impl;
 
 import com.throne.seckilling.dao.OrderDOMapper;
 import com.throne.seckilling.dao.SequenceDOMapper;
+import com.throne.seckilling.dao.StockLogDOMapper;
 import com.throne.seckilling.data_object.OrderDO;
 import com.throne.seckilling.data_object.SequenceDO;
+import com.throne.seckilling.data_object.StockLogDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
 import com.throne.seckilling.service.ItemService;
@@ -32,10 +34,12 @@ public class OrderServiceImpl implements OrderService {
     private OrderDOMapper orderDOMapper;
     @Autowired
     private SequenceDOMapper sequenceDOMapper;
+    @Autowired
+    private StockLogDOMapper stockLogDOMapper;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) throws BusinessException {
         // 校验下单状态
         ItemModel itemById = itemService.getCachedItemById(itemId);
         if (itemById == null) {
@@ -60,6 +64,12 @@ public class OrderServiceImpl implements OrderService {
         if (!isDecreased) {
             throw new BusinessException(EnumBusinessError.NOT_ENOUGH_STOCK);
         }
+        // 增加销量 也先在redis中进行扣减，再发送异步消息让数据库同步数据进行管理
+        boolean isIncreased = itemService.increaseSalesById(itemId, amount);
+        if (!isIncreased){
+            throw new BusinessException(EnumBusinessError.UNKNOWN_ERROR);
+        }
+
 
         //订单入库
         OrderModel orderModel = new OrderModel();
@@ -78,8 +88,19 @@ public class OrderServiceImpl implements OrderService {
         OrderDO orderDO = convertOrderModelToOderDO(orderModel);
         orderDOMapper.insertSelective(orderDO);
 
-        // todo: 增加销量 使用rocketmq进行管理
-        itemService.increaseSalesById(itemId, amount);
+
+        /*
+            设置库存流水状态为创建成功
+            由于创建订单和设置库存流水在同一事务，
+            不论哪一部分操作失败都会rollback，
+            因此不会出现订单创建成功库存流水却设置失败的情况
+       */
+        StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(logId);
+        if (stockLogDO == null) {
+            throw new BusinessException(EnumBusinessError.UNKNOWN_ERROR, "库存流水不存在，订单创建失败");
+        }
+        stockLogDO.setStatus(2);
+        stockLogDOMapper.updateByPrimaryKey(stockLogDO);
 
         return orderModel;
     }

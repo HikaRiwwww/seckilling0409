@@ -1,6 +1,8 @@
 package com.throne.seckilling.mq;
 
 import com.alibaba.fastjson.JSON;
+import com.throne.seckilling.dao.StockLogDOMapper;
+import com.throne.seckilling.data_object.StockLogDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.service.OrderService;
 import org.apache.rocketmq.client.exception.MQBrokerException;
@@ -36,7 +38,11 @@ public class MqProducer {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private StockLogDOMapper stockLogDOMapper;
+
     private TransactionMQProducer producer;
+
 
     @PostConstruct
     public void init() throws MQClientException {
@@ -51,8 +57,9 @@ public class MqProducer {
                 Integer amount = (Integer) argsMap.get("amount");
                 Integer userId = (Integer) argsMap.get("userId");
                 Integer promoId = (Integer) argsMap.get("promoId");
+                String logId = (String) argsMap.get("logId");
                 try {
-                    orderService.createOrder(userId, itemId, amount, promoId);
+                    orderService.createOrder(userId, itemId, amount, promoId, logId);
                 } catch (BusinessException e) {
                     e.printStackTrace();
                     return LocalTransactionState.ROLLBACK_MESSAGE;
@@ -70,15 +77,31 @@ public class MqProducer {
 
                 String bodyStr = new String(messageExt.getBody());
                 Map<String, Object> bodyMap = JSON.parseObject(bodyStr, Map.class);
+
+                // todo:这两个参数有没有用？
                 Integer itemId = (Integer) bodyMap.get("itemId");
                 Integer amount = (Integer) bodyMap.get("amount");
 
-                return null;
+                String logId = (String) bodyMap.get("logId");
+                StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(logId);
+                if (stockLogDO == null) {
+                    return LocalTransactionState.UNKNOW;
+                }
+                Integer status = stockLogDO.getStatus();
+                if (status == 2) {
+                    return LocalTransactionState.COMMIT_MESSAGE;
+                } else if (status == 1) {
+                    return LocalTransactionState.UNKNOW;
+                } else {
+                    return LocalTransactionState.ROLLBACK_MESSAGE;
+                }
+
             }
         });
         producer.start();
     }
 
+    @Deprecated
     /**
      * 生产者发送同步商品库存信息的方法
      * @param itemId 商品id
@@ -99,16 +122,19 @@ public class MqProducer {
         return true;
     }
 
-    public boolean transactionalAsyncDecreaseStock(Integer userId, Integer itemId, Integer amount, Integer promoId) {
+    public boolean transactionalAsyncDecreaseStock(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) {
         Map<String, Object> bodyMap = new HashMap<>();
         bodyMap.put("itemId", itemId);
         bodyMap.put("amount", amount);
+        bodyMap.put("logId", logId);
 
         Map<String, Object> argsMap = new HashMap<>();
         argsMap.put("itemId", itemId);
         argsMap.put("amount", amount);
         argsMap.put("userId", userId);
         argsMap.put("promoId", promoId);
+        argsMap.put("logId", logId);
+
 
         Message message = new Message(topicName, "increase", JSON.toJSONBytes(bodyMap));
         try {
@@ -116,6 +142,10 @@ public class MqProducer {
             LocalTransactionState state = result.getLocalTransactionState();
             return state == LocalTransactionState.COMMIT_MESSAGE;
         } catch (MQClientException e) {
+            // 如果出现异常，要讲stockLog设置为需要回滚
+            StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(logId);
+            stockLogDO.setStatus(3);
+            stockLogDOMapper.insertSelective(stockLogDO);
             e.printStackTrace();
             return false;
         }

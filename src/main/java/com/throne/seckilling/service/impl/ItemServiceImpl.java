@@ -2,8 +2,10 @@ package com.throne.seckilling.service.impl;
 
 import com.throne.seckilling.dao.ItemDOMapper;
 import com.throne.seckilling.dao.ItemStockDOMapper;
+import com.throne.seckilling.dao.StockLogDOMapper;
 import com.throne.seckilling.data_object.ItemDO;
 import com.throne.seckilling.data_object.ItemStockDO;
+import com.throne.seckilling.data_object.StockLogDO;
 import com.throne.seckilling.error.BusinessException;
 import com.throne.seckilling.error.EnumBusinessError;
 import com.throne.seckilling.mq.MqProducer;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -39,10 +42,15 @@ public class ItemServiceImpl implements ItemService {
     private PromoService promoService;
     @Autowired
     private MqProducer mqProducer;
+    @Autowired
+    private StockLogDOMapper stockLogDOMapper;
+
 
     @Override
-    public void increaseSalesById(Integer itemId, Integer amount) {
-        itemDOMapper.increaseSalesById(itemId, amount);
+    public boolean increaseSalesById(Integer itemId, Integer amount) {
+        redisTemplate.opsForValue().increment("promo_item_sales_" + itemId, amount);
+        return true;
+
     }
 
     @Override
@@ -103,13 +111,34 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public boolean decreaseItemStock(Integer itemId, Integer amount) {
         long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount * -1);
-        if (result >= 0) {
+        if (result > 0) {
             return true;
-        } else {
+        }else if (result == 0){
+            /*
+            当库存售罄时，在缓存中设置售罄标识，由Controller在每次创建订单前读取，
+            如果存在售罄标识则直接抛出异常，从而保证不会初始化库存流水到数据库，
+            也不会额外地创建订单消息，浪费系统资源
+             */
+            redisTemplate.opsForValue().set("item_stock_invalid_" + itemId, true);
+            return true;
+        }
+        else {
             // 如果扣减库存至负数，则必定要将redis内的数据回滚
             redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
             return false;
         }
+    }
+
+    @Override
+    public String initStockLog(Integer itemId, Integer amount) {
+        String logId = UUID.randomUUID().toString().replace("-", "");
+        StockLogDO stockLogDO = new StockLogDO();
+        stockLogDO.setAmount(amount);
+        stockLogDO.setItemId(itemId);
+        stockLogDO.setStockLogId(logId);
+        stockLogDO.setStatus(1);
+        stockLogDOMapper.insertSelective(stockLogDO);
+        return logId;
     }
 
     @Override

@@ -5,5 +5,5 @@ import com.throne.seckilling.service.model.OrderModel;
 
 public interface OrderService {
 
-    OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException;
+    OrderModel createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) throws BusinessException;
 }
