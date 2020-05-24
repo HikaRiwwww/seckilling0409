@@ -119,8 +119,9 @@ public class PromoServiceImpl implements PromoService {
         }
 
         String wand = UUID.randomUUID().toString().replace("-", "");
-        redisTemplate.opsForValue().set("promo_token_" + promoId, wand);
-        redisTemplate.expire("promo_token_" + promoId, 5, TimeUnit.MINUTES);
+        String wandKey = "promo_token_" + promoId + "user_id_" + userId + "item_id_" + itemId;
+        redisTemplate.opsForValue().set(wandKey, wand);
+        redisTemplate.expire(wandKey, 5, TimeUnit.MINUTES);
 
         return wand;
 

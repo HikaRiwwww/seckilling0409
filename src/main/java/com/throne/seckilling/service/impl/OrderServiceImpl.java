@@ -61,7 +61,11 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public OrderModel createPromoOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String logId) throws BusinessException {
-        //落单减库存  这里扣减的是redis中缓存的活动商品库存，此时，消息还未被同步给数据库
+        /*
+        落单减库存  这里扣减的是redis中缓存的活动商品库存，此时，消息还未被同步给数据库
+        校验用户，商品等与下单本身无关的逻辑被移到了获取秒杀令牌的环节里，
+        而校验令牌的逻辑前置到了Controller层，保证这部分代码只处理秒杀下单的逻辑
+         */
         ItemModel itemById = itemService.getCachedItemById(itemId);
         boolean isDecreased = itemService.decreasePromoItemStock(itemId, amount);
         if (!isDecreased) {

@@ -35,6 +35,13 @@
         <div class="form-actions">
             <button class="btn blue" type="submit" id="seckill">点击购买</button>
         </div>
+        <div class="form-actions" id="verifyDiv" style="display: none">
+            <button class="btn blue" type="submit" style="color: white; background-color: #d84a38" id="verifyButton">
+                验证
+            </button>
+            <img id="verifyImg" src="">
+            <input type="text" id="verifyText">
+        </div>
 
     </div>
 </div>
@@ -46,23 +53,26 @@
 <script>
     $(function () {
         var itemId = getId();
-        var details = ""
+        var details = "";
+        var uuidToken = window.localStorage["uuidToken"];
+        var promoId = "";
         $.ajax({
             type: "GET",
             url: "/item/get_details?id=" + itemId,
             success: function (data) {
                 if (data.status === "success") {
-                    details = data.data
-                    $("#item_img").attr("src", details.imgUrl)
-                    $("#item_title").text(details.title)
-                    $("#item_price").text(details.price)
-                    $("#item_sales").text(details.sales)
-                    $("#item_stock").text(details.stock)
-                    if (data.data.promoStatus === 2){
-                        $("#seckill").before('<div id="promo" style="color: red"></div>')
-                        $("#promo").text("该商品正于 "+data.data.promoStartDate+" 至 "+data.data.promoEndDate+" 间进行秒杀活动")
-                        $("#seckill").attr('class', 'btn red')
-                        $("#item_price").attr("style", "color:red")
+                    details = data.data;
+                    promoId = details.promoId;
+                    $("#item_img").attr("src", details.imgUrl);
+                    $("#item_title").text(details.title);
+                    $("#item_price").text(details.price);
+                    $("#item_sales").text(details.sales);
+                    $("#item_stock").text(details.stock);
+                    if (data.data.promoStatus === 2) {
+                        $("#seckill").before('<div id="promo" style="color: red"></div>');
+                        $("#promo").text("该商品正于 " + data.data.promoStartDate + " 至 " + data.data.promoEndDate + " 间进行秒杀活动");
+                        $("#seckill").attr('class', 'btn red');
+                        $("#item_price").attr("style", "color:red");
                         $("#item_price").text("秒杀价：" + details.secPrice)
                     }
 
@@ -73,41 +83,102 @@
             error: function (data) {
                 alert("获取商品失败：" + data.responseText)
             }
-        })
+        });
 
         $("#seckill").on("click", function () {
-            var uuidToken = window.localStorage["uuidToken"]
-            if (uuidToken==null){
-              alert("用户尚未登录")
-              window.location.href = "/html/login.html"
-              return false;
-            }
-            $.ajax({
-                type: "POST",
-                url: "/order/create_order?uuidToken=" + uuidToken,
-                data: {"item_id": itemId, "amount": 1, "promoId": details.promoId}, // todo: amount暂时写死，先模拟秒杀单件商品的情况
-                success: function (data) {
-                    if (data.status === "success") {
-                        alert("下单成功")
-                        window.location.reload()
-                    } else {
-                        alert(data.data.errorMsg)
-                        console.log(data.data.errorCode)
-                        if (data.data.errorCode === 10004) {
-                            window.location.href = "/html/login.html"
-                        }
-                    }
-                },
-                error: function (data) {
-                    alert("下单失败：" + data.responseText)
+            if (uuidToken == null) {
+                alert("用户尚未登录");
+                window.location.href = "/html/login.html";
+                return false;
+            } else {
+                // 秒杀商品的请求逻辑
+                if (promoId != null) {
+                    $("#verifyImg").attr("src", "/order/get_verify_code?uuidToken=" + uuidToken);
+                    $("#verifyDiv").show();
+                    $("#verifyButton").click(function () {
+                        $.ajax({
+                            type: "POST",
+                            url: "/order/get_wand?uuidToken=" + uuidToken,
+                            data: {
+                                "item_id": itemId,
+                                "amount": 1,
+                                "promoId": promoId,
+                                "verifyCode": $("#verifyText").val()
+                            },
+                            success: function (data) {
+                                if (data.status === "success") {
+                                    wand = data.data;
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "/order/create_order?uuidToken=" + uuidToken,
+                                        data: {
+                                            "item_id": itemId,
+                                            "amount": 1,
+                                            "promoId": details.promoId,
+                                            "wand": "wand"
+                                        }, // todo: amount暂时写死，先模拟秒杀单件商品的情况
+                                        success: function (data) {
+                                            if (data.status === "success") {
+                                                alert("下单成功");
+                                                window.location.reload()
+                                            } else {
+                                                alert(data.data.errorMsg);
+                                                console.log(data.data.errorCode);
+                                                if (data.data.errorCode === 10004) {
+                                                    window.location.href = "/html/login.html"
+                                                }
+                                            }
+                                        },
+                                        error: function (data) {
+                                            alert("下单失败：" + data.responseText)
+                                        }
+                                    })
+                                } else {
+                                    alert("获取令牌失败1：" + data.data.errorMsg)
+                                }
+                            },
+                            error: function (data) {
+                                alert("获取令牌失败2：" + data.responseText)
+                            }
+                        })
+                    })
                 }
-            })
+
+                // 普通商品的请求逻辑
+                else {
+                    $.ajax({
+                        type: "POST",
+                        url: "/order/create_order?uuidToken=" + uuidToken,
+                        data: {
+                            "item_id": itemId,
+                            "amount": 1,
+                            "promoId": details.promoId,
+                        }, // todo: amount暂时写死，先模拟秒杀单件商品的情况
+                        success: function (data) {
+                            if (data.status === "success") {
+                                alert("下单成功");
+                                window.location.reload()
+                            } else {
+                                alert(data.data.errorMsg);
+                                console.log(data.data.errorCode);
+                                if (data.data.errorCode === 10004) {
+                                    window.location.href = "/html/login.html"
+                                }
+                            }
+                        },
+                        error: function (data) {
+                            alert("下单失败：" + data.responseText)
+                        }
+                    })
+                }
+            }
         })
-    })
+    });
 
     function getId() {
         return window.location.search.split("=")[1];
     }
+
 
 </script>
 </html>

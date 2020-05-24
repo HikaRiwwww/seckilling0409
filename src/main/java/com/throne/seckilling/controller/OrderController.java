@@ -9,6 +9,7 @@ import com.throne.seckilling.service.ItemService;
 import com.throne.seckilling.service.OrderService;
 import com.throne.seckilling.service.PromoService;
 import com.throne.seckilling.service.model.UserModel;
+import com.throne.seckilling.uitils.VerifyCodeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,7 +19,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 订单相关路由
@@ -65,7 +73,7 @@ public class OrderController extends BaseController {
             @RequestParam(name = "item_id") Integer itemId,
             @RequestParam(name = "amount") Integer amount,
             @RequestParam(name = "promoId") Integer promoId,
-            @RequestParam(name = "wand") String wand
+            @RequestParam(name = "wand", defaultValue = "") String wand
     ) throws BusinessException {
         // 判断用户登录状态
         String uuidToken = request.getParameterMap().get("uuidToken")[0];
@@ -110,7 +118,8 @@ public class OrderController extends BaseController {
     @ResponseBody
     public CommonReturnType generateWand(
             @RequestParam(name = "item_id") Integer itemId,
-            @RequestParam(name = "promoId") Integer promoId
+            @RequestParam(name = "promoId") Integer promoId,
+            @RequestParam(name = "verifyCode") String verifyCode
     ) throws BusinessException {
         // 判断用户登录状态
         String uuidToken = request.getParameterMap().get("uuidToken")[0];
@@ -120,12 +129,40 @@ public class OrderController extends BaseController {
         }
         UserModel userModel = (UserModel) redisTemplate.opsForValue().get(uuidToken);
         Integer userId = userModel.getId();
-        String wand = promoService.generateWand(promoId, userId, promoId);
+
+        String key = "user_id_" + userId + "_" + "verify_code";
+        String codeInRedis = (String) redisTemplate.opsForValue().get(key);
+        if (codeInRedis == null || !verifyCode.equals(codeInRedis)){
+            throw new BusinessException(EnumBusinessError.USER_PARAM_ERROR, "验证码错误");
+        }
+
+        String wand = promoService.generateWand(promoId, userId, itemId);
         if (wand == null){
             throw new BusinessException(EnumBusinessError.USER_PARAM_ERROR, "获取令牌失败");
         }
 
-        return CommonReturnType.create(wand);
+        return CommonReturnType.create("success", wand);
+    }
+
+
+    @RequestMapping(value = "/get_verify_code", method = RequestMethod.GET)
+    @ResponseBody
+    public void generateVerifyCode(HttpServletResponse response) throws BusinessException, IOException {
+        String uuidToken = request.getParameterMap().get("uuidToken")[0];
+        if (StringUtils.isEmpty(uuidToken)) {
+            throw new BusinessException(EnumBusinessError.USER_NOT_LOGIN);
+        }
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(uuidToken);
+        Integer userId = userModel.getId();
+        Map<String, Object> codeMap = VerifyCodeUtil.generateVerifyCode();
+        String codes = (String) codeMap.get("codes");
+        BufferedImage codeImg = (BufferedImage) codeMap.get("codeImg");
+
+        String key = "user_id_" + userId + "_" + "verify_code";
+        redisTemplate.opsForValue().set(key, codes);
+        redisTemplate.expire(key, 3, TimeUnit.MINUTES);
+        ImageIO.write(codeImg, "jpeg", response.getOutputStream());
+
     }
 
 

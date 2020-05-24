@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
            responseData.put("errorMsg", businessException.getErrorMsg());
        }else if (e instanceof ServletRequestBindingException){
            responseData.put("errorCode", EnumBusinessError.UNKNOWN_ERROR.getErrorCode());
-           responseData.put("errorMsg", "url绑定路由问题");
+           responseData.put("errorMsg", "参数校验不合法");
        }else if (e instanceof NoHandlerFoundException){
            responseData.put("errorCode", EnumBusinessError.UNKNOWN_ERROR.getErrorCode());
            responseData.put("errorMsg", "访问路径不存在");
